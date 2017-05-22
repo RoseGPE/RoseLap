@@ -54,32 +54,35 @@ def load_dxf(path_to_file):
     #[print(x) for x in dxf_output]
 
     hop = [0,0];
-    while len(connectivity) < len(dxf_output):
-      matches_pos = []
-      matches_neg = []
-      for i in range(len(dxf_output)):
-        if len(connectivity) < len(dxf_output)-1:
-          if i in connectivity:
+    if len(dxf_output) == 1:
+      connectivity = [0]
+    else:
+      while len(connectivity) < len(dxf_output):
+        matches_pos = []
+        matches_neg = []
+        for i in range(len(dxf_output)):
+          if len(connectivity) < len(dxf_output)-1:
+            if i in connectivity:
+              continue
+          elif i == connectivity[-1]:
             continue
-        elif i == connectivity[-1]:
-          continue
-        shape = dxf_output[i];
-        if abs(shape[-4] - hop[0]) < epsilon and abs(shape[-3] - hop[1]) < epsilon:
-          matches_pos.append(i)
-        elif abs(shape[-2] - hop[0]) < epsilon and abs(shape[-1] - hop[1]) < epsilon:
-          matches_neg.append(i)
-      if len(matches_pos) > 0:
-        connectivity.append(matches_pos[0])
-        hop = dxf_output[matches_pos[0]][-2:]
-      else:
-        connectivity.append(matches_neg[0])
-        temp = dxf_output[matches_neg[0]][-2:]
-        dxf_output[matches_neg[0]][-2:] = dxf_output[matches_neg[0]][-4:-2]
-        dxf_output[matches_neg[0]][-4:-2] = temp
-        #print('flipper', matches_neg[0])
-        if (dxf_output[matches_neg[0]][0] == 'arc'):
-          dxf_output[matches_neg[0]][6]*=-1;
-        hop = dxf_output[matches_neg[0]][-2:]
+          shape = dxf_output[i];
+          if abs(shape[-4] - hop[0]) < epsilon and abs(shape[-3] - hop[1]) < epsilon:
+            matches_pos.append(i)
+          elif abs(shape[-2] - hop[0]) < epsilon and abs(shape[-1] - hop[1]) < epsilon:
+            matches_neg.append(i)
+        if len(matches_pos) > 0:
+          connectivity.append(matches_pos[0])
+          hop = dxf_output[matches_pos[0]][-2:]
+        else:
+          connectivity.append(matches_neg[0])
+          temp = dxf_output[matches_neg[0]][-2:]
+          dxf_output[matches_neg[0]][-2:] = dxf_output[matches_neg[0]][-4:-2]
+          dxf_output[matches_neg[0]][-4:-2] = temp
+          #print('flipper', matches_neg[0])
+          if (dxf_output[matches_neg[0]][0] == 'arc'):
+            dxf_output[matches_neg[0]][6]*=-1;
+          hop = dxf_output[matches_neg[0]][-2:]
     return (dxf_output, connectivity)
 
 def pointify_dxf(dxf_output, connectivity, dl):
@@ -170,7 +173,7 @@ def plot_segments(segments):
 
 def dxf_to_segments(filename, dl):
   "The function you came here for. Hand it a filename and desired segment distance, you get segments of the track."
-  dxf_geometry,connectivity = load_dxf('./track.dxf')
+  dxf_geometry,connectivity = load_dxf(filename)
   points = pointify_dxf(dxf_geometry,connectivity,dl)
   segs = seg_points(points)
   return segs
