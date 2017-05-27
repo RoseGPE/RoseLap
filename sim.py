@@ -148,6 +148,7 @@ def plot_velocity_and_events(output,axis='x'):
   ax[0].plot(xaxis,v,lw=5,label='Velocity')
   ax[1].plot(xaxis,along,lw=4,label='Longitudinal g\'s')
   ax[1].plot(xaxis,alat,lw=4,label='Lateral g\'s')
+  ax[1].plot(xaxis,gear,lw=4,label='Gear')
 
   lim=max(v)
   alpha = 0.5
@@ -163,7 +164,8 @@ def plot_velocity_and_events(output,axis='x'):
       ax[0].axvline(xaxis[idx], color='black', lw=2, alpha=0.9)
       sector=sec
   ax[0].set_ylim((0,lim+1))
-  ax[1].set_ylim((min((min(along),min(alat)))-0.1,0.1+max((max(along),max(alat)))))
+  #ax[1].set_ylim((min((min(along),min(alat)))-0.1,0.1+max((max(along),max(alat)))))
+  ax[1].set_ylim(-5,5)
   plt.xlim((0,xaxis[-1]))
 
   #sectors = set(output[:,3])
