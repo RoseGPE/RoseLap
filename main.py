@@ -1,6 +1,6 @@
 from sim import *
 import vehicle_parameters as vehicle
-track = './ax.dxf'
+track = './DXFs/ax.dxf'
 
 if False:
 

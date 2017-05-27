@@ -180,7 +180,7 @@ def plot_velocity_and_events(output,axis='x'):
   plt.draw()
 
 if __name__ == '__main__':
-  segs = track_segmentation.dxf_to_segments('./track.dxf', 0.1)
+  segs = track_segmentation.dxf_to_segments('./DXFs/track.dxf', 0.1)
   #print 'fuk'
   #[print(x.x, x.y, x.curvature, x.sector) for x in segs]
   #track_segmentation.plot_segments(segs)
