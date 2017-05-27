@@ -2,7 +2,7 @@ from sim import *
 import vehicle_parameters as vehicle
 track = './DXFs/ax.dxf'
 
-if False:
+if True:
 
 	#track_segmentation.plot_segments(segs)
 
@@ -129,7 +129,7 @@ if False:
 	plt.ylabel('Track Time')
 	plt.draw()
 
-if True:
+if False:
 
 	segs = track_segmentation.dxf_to_segments(track, 0.25)
 	track_segmentation.plot_segments(segs)

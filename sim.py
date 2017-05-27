@@ -13,6 +13,23 @@ Statuses:
 4. sustaining speed to prevent going out of curve
 5. topped out; drag limitation
 """
+# Status Constant Definition
+S_BRAKING = 1
+S_ENG_LIM_ACC = 2
+S_TIRE_LIM_ACC = 3
+S_SUSTAINING = 4
+S_DRAG_LIM = 5
+
+# Output Index Constant Definitions (Columns)
+O_TIME = 0
+O_DISTANCE = 1
+O_VELOCITY = 2
+O_SECTORS = 3
+O_STATUS = 4
+O_GEAR = 5
+O_LONG_ACC = 6
+O_LAT_ACC = 7
+
 
 def step(vehicle,prior_result,segment,brake):
   """
@@ -22,100 +39,106 @@ def step(vehicle,prior_result,segment,brake):
   @param brake a boolean value specifying whether or not to apply the brakes (with full available force)
   """
 
-  v0 = prior_result[2];
-  x0 = prior_result[1];
-  t0 = prior_result[0];
+  # init values
+  v0 = prior_result[O_VELOCITY];
+  x0 = prior_result[O_DISTANCE];
+  t0 = prior_result[O_TIME];
+  gear = None
 
   # Regardless of what you do, this much is true.
-  F_lateral = vehicle.mass*v0**2*segment.curvature
-  F_down = vehicle.alpha_downforce()*v0**2;
-  F_total_available = vehicle.mu*(vehicle.mass*vehicle.g + F_down) # Will include aero later
+  F_lateral = vehicle.mass * (v0 ** 2) * segment.curvature
+  F_down = vehicle.alpha_downforce() * (v0 ** 2);
+  F_total_available = vehicle.mu * (vehicle.mass * vehicle.g + F_down) # Will include aero later
   
   # If there isn't even enough grip to turn, you're in a bad situation.
   if (F_lateral > F_total_available):
     return None
 
   # Compute remaining available tire grip
-  F_ground_longitudinal_available = math.sqrt(F_total_available**2-F_lateral**2)
-
-  gear = None
+  F_ground_longitudinal_available = math.sqrt((F_total_available ** 2) - (F_lateral ** 2))
 
   # Accelerate, or decelerate. Why do anything else?
   if brake:
     F_ground_longitudinal = -F_ground_longitudinal_available # Assume we can lock up tires and bias is perfect
-    status = 1
+    status = S_BRAKING
   else:
-    output_forces = [vehicle.eng_force(v0,gear) for gear in range(len(vehicle.gears))]
-    #print(output_forces)
-    gear = np.argmax(output_forces)
+    output_forces = [eng_force(v0, gear_index) for gear_index in range(len(vehicle.gears))]
+    gear = np.argmax(output_forces) # index tho
     F_ground_longitudinal = output_forces[gear] # Assume driver always goes hard, but never burns out
-    status = 2
+    status = S_ENG_LIM_ACC
+
     if F_ground_longitudinal > F_ground_longitudinal_available:
       F_ground_longitudinal = F_ground_longitudinal_available
-      status = 3
-  #print('ok', vehicle.eng_force(v0))
-  F_drag = vehicle.alpha_drag()*v0**2
+      status = S_TIRE_LIM_ACC
+
+  F_drag = vehicle.alpha_drag() * (v0 ** 2)
   F_longitudinal = F_ground_longitudinal - F_drag
   
-  
-  a = F_longitudinal/vehicle.mass
+  a = F_longitudinal / vehicle.mass
+
   try:
-    vf = math.sqrt(v0**2 + 2*a*segment.length)
+    vf = math.sqrt((v0 ** 2) + 2 * a * segment.length)
   except:
-    vf=0
+    vf = 0
+
   if abs(F_longitudinal) < 1e-3:
-    status=5
+    status = S_DRAG_LIM
+
   if vehicle.mass*vf**2*segment.curvature > vehicle.mu*(vehicle.mass*vehicle.g + vehicle.alpha_downforce()*vf**2):
-    vf=v0
-    status = 4
+    vf = v0
+    status = S_SUSTAINING
 
-  tf = t0+segment.length/((v0+vf)/2) if v0!=0 else 0;
-  xf = x0+segment.length;
+  tf = t0 + segment.length / ((v0 + vf) / 2) if v0 != 0 else 0
+  xf = x0 + segment.length
 
-  return np.array([tf,xf,vf,segment.sector,status,gear,a/vehicle.g, v0**2*segment.curvature/vehicle.g])
+  return np.array([tf, xf, vf, segment.sector, status, gear, a / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g])
 
-def solve(vehicle,segments,v0=0):
+def solve(vehicle, segments, v0 = 0):
+  # set up output matrix
   output = np.zeros((len(segments), 8))
   
-  output[0,2] = v0
-  step_result = step(vehicle,output[0], segments[0], False)
+  # get first output row
+  output[0, O_VELOCITY] = v0
+  step_result = step(vehicle, output[0], segments[0], False)
   output[0] = step_result
-  i=1
+
+  i = 1
   brake = False
   failpt = -1
   lastsafept = -1
-  while i<len(segments):
-    step_result = step(vehicle,output[i-1,:], segments[i], brake)
-    #print 'Segment %d' % i
-    #print step_result
-    if i<failpt:
-      output[i] = step_result
-      i+=1
-      brake = True
-    elif i == failpt and step_result is None:
-      # evaulate; this braking didn't work
-      lastsafept-=1
-      i=lastsafept
-      #raw_input()
+  while i < len(segments):
+    step_result = step(vehicle, output[i-1], segments[i], brake)
 
+    # we've been told to try again, this time with brakes
+    if i < failpt:
+      output[i] = step_result
+      i += 1
+      brake = True
+
+    # we caught the issue too late, we need to back up even more
+    elif i == failpt and step_result is None:
+      lastsafept -= 1
+      i = lastsafept
+
+    # the curve was too much, we need to back up and brake
     elif step_result is None:
-      # initiate braking algorithm
       brake = True
       failpt = i
       lastsafept = i-1
       i = lastsafept
-      #i-=1
+
+    # nothing's wrong, just how we like it :)
     else:
       output[i] = step_result
-      i+=1
+      i += 1
       brake = False
-  
 
   return output
 
 def steady_solve(vehicle,segments,v0=0):
-  output=solve(vehicle,segments,v0)
-  return solve(vehicle,segments,output[-1,2])
+  # TODO: Find a better way to do this #sketch
+  output = solve(vehicle,segments,v0)
+  return solve(vehicle,segments,output[-1, O_VELOCITY])
 
 def colorgen(num_colors, idx):
   color_norm  = colors.Normalize(vmin=0, vmax=num_colors-1)
@@ -124,21 +147,21 @@ def colorgen(num_colors, idx):
     return scalar_map.to_rgba(index)
   return map_index_to_rgb_color(idx)
 
-def plot_velocity_and_events(output,axis='x'):
-  fig, ax = plt.subplots(2,sharex=True)
-  t = output[:,0]
-  x = output[:,1]
-  v = output[:,2]
+def plot_velocity_and_events(output, axis='x'):
+  fig, ax = plt.subplots(2, sharex=True)
 
-  sectors = output[:,3]
-  status = output[:,4]
-  gear = output[:,5]
+  t = output[:, O_TIME]
+  x = output[:, O_DISTANCE]
+  v = output[:, O_VELOCITY]
 
-  along = output[:,6]
-  alat = output[:,7]
-  
+  sectors = output[:, O_SECTORS]
+  status = output[:, O_STATUS]
+  gear = output[:, O_GEAR]
 
-  if axis=='time':
+  along = output[:, O_LONG_ACC]
+  alat = output[:, O_LAT_ACC]
+
+  if axis == 'time':
     plt.xlabel('Elapsed time')
     xaxis = t
   else:
@@ -150,7 +173,7 @@ def plot_velocity_and_events(output,axis='x'):
   ax[1].plot(xaxis,alat,lw=4,label='Lateral g\'s')
   ax[1].plot(xaxis,gear,lw=4,label='Gear')
 
-  lim=max(v)
+  lim = max(v)
   alpha = 0.5
   ax[0].fill_between(xaxis, 0, lim, where= status==1, facecolor='#e23030', alpha=alpha)
   ax[0].fill_between(xaxis, 0, lim, where= status==2, facecolor='#50d21d', alpha=alpha)
@@ -179,16 +202,42 @@ def plot_velocity_and_events(output,axis='x'):
 
   plt.draw()
 
-if __name__ == '__main__':
-  segs = track_segmentation.dxf_to_segments('./DXFs/track.dxf', 0.1)
-  #print 'fuk'
-  #[print(x.x, x.y, x.curvature, x.sector) for x in segs]
-  #track_segmentation.plot_segments(segs)
-  #print 'why'
-  output = solve(segs)
-  
-  print('Took %.3f seconds to travel %.1f feet' % (output[-1,0],output[-1,1]))
 
-  plot_velocity_and_events(output,'x')
+### magic eng_force k ###
 
-  #print(output[:,5])
+g = 32.2 # ft/s^2
+mass = (550*2)/g #slug
+
+downforce_35mph = 60; # lbf
+def alpha_downforce():
+    return downforce_35mph/(51.33333**2); # lbf/(ft/s)^2
+
+drag_35mph = 0 # lbf
+def alpha_drag():
+    return drag_35mph/(51.33333**2); # lbf/(ft/s)^2
+
+mu = 2.0; #coeff
+tire_radius = 0.75 #ft
+
+engine_rpms = [1000.0, 3000.0, 9000.0] #rev/min
+#engine_hps  = [10.0, 25.0, 45.0, 30.0]         #horsepower
+engine_torque = [36.88*0.9, 36.88*2.0, 36.88*0.8] # ft-lbf
+engine_reduction = 2.81
+gears = [2.416, 1.92, 1.562, 1.277, 1.05]
+final_drive_reduction = 36.0/13.0
+
+def eng_force(v,gear):
+  eng_output_rpm = v/tire_radius*9.5493*final_drive_reduction
+  crank_rpm = eng_output_rpm*engine_reduction*gears[gear]
+  if crank_rpm <= engine_rpms[0]:
+    # cap to lowest hp
+    return engine_torque[0]*engine_reduction*gears[gear]*final_drive_reduction/tire_radius
+    #hp = engine_hps[0] + (crank_rpm-engine_rpms[0])*(engine_hps[1]-engine_hps[0])/(engine_rpms[1]-engine_rpms[0])
+  elif crank_rpm > engine_rpms[-1]:
+    return 0 # simulate hitting the rev limiter
+  else:
+    for i in range(1,len(engine_rpms)):
+      if crank_rpm<engine_rpms[i]:
+        torque = engine_torque[i] + (crank_rpm-engine_rpms[i])*(engine_torque[i-1]-engine_torque[i])/(engine_rpms[i-1]-engine_rpms[i])
+        return torque*engine_reduction*gears[gear]*final_drive_reduction/tire_radius
+    #return torque*engine_reduction*gears[gear]*final_drive_reduction/tire_radius
