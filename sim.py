@@ -66,7 +66,8 @@ def step(vehicle,prior_result,segment,brake):
   if abs(F_longitudinal) < 1e-3:
     status=5
   if vehicle.mass*vf**2*segment.curvature > vehicle.mu*(vehicle.mass*vehicle.g + vehicle.alpha_downforce()*vf**2):
-    vf=v0
+    vf=v0 # this isn't really right..... but seems to work
+    #vf=math.sqrt(vehicle.g*vehicle.mass*vehicle.mu/(segment.curvature*vehicle.mass-vehicle.alpha_downforce()*vehicle.mu))-1e-6
     status = 4
 
   tf = t0+segment.length/((v0+vf)/2) if v0!=0 else 0;
