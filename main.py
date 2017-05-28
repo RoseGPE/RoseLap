@@ -2,7 +2,7 @@ from sim import *
 import vehicle_parameters as vehicle
 track = './DXFs/ax.dxf'
 
-if True:
+if False:
 
 	#track_segmentation.plot_segments(segs)
 
@@ -29,7 +29,7 @@ if True:
 	plt.ylabel('Track Time')
 	plt.draw()
 
-if False:
+if True:
 	segs = track_segmentation.dxf_to_segments(track, 0.25)
 	possibilities = np.array([0.0,0.25,0.5,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.5,2.0,2.5])
 	output = []

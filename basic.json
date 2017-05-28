@@ -1,0 +1,12 @@
+{
+	"mass": 550,
+	"downforce_35mph": 60,
+	"drag_35mph": 0,
+	"tire_mu": 2.0,
+	"tire_radius": 0.75,
+	"engine_rpms": [1000.0, 3000.0, 9000.0],
+	"engine_torque": [33.192, 73.76, 29.504],
+	"engine_reduction": 2.81,
+	"gears": [2.416, 1.92, 1.562, 1.277, 1.05],
+	"final_drive_reduction": 2.7692
+}
