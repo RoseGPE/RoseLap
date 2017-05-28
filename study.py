@@ -1,29 +1,34 @@
 from sim import *
-import vehicle_parameters as vehicle
+import vehicle
 import track_segmentation
 import json
 
 """
 Study Schema:
+vehicle: [string] filename for .json in the Vehicles directory
 track: [string] filename for .dxf in the DXFs directory
 segment_distance: [float]
-tests: [object]
+tests: [object-array]
 	target: [string] vehicle parameter to alter
-	operation: ['replace', 'product']
-	test_vals: [array] of a number ideally
-plot_style: ['semilog', 'basic']
+	operation: 'replace' || 'product' || 'inverse-product'
+	test_vals: [float-array]
+plot_style: 'semilog' || 'basic'
 plot_title: [string]
 plot_x_label: [string]
 plot_y_label: [string]
-plot_points: [array]
+plot_points: [float-array]
 """
 
 print("Loading test...")
 
 # load the study JSON into s_OBJ
-study_JSON = './Studies/aero_scale_factor_s.json' # remember to set the right vehicle parameters because structure is still bad
+# study_JSON = './Studies/aero_scale_factor_s.json'
+study_JSON = './Studies/aero_efficiency_s.json'
 with open(study_JSON) as data:
   s_OBJ = json.load(data)
+
+# load vehicle
+vehicle.load(s_OBJ["vehicle"])
 
 print("Setting up tests...")
 
@@ -50,29 +55,36 @@ times = np.zeros(num_tests)
 print("Running tests...")
 
 # run the study
-for i in range(num_tests):
+for test_no in range(num_tests):
 	# alter the variables as need be
-	for j, var in enumerate(targets):
-		test_op = operations[j]
-		test_vals = test_points[j]
+	for var_no, var in enumerate(targets):
+		test_op = operations[var_no]
+		test_vals = test_points[var_no]
 
 		if test_op == "product":
-			vehicle.setVar(var, vehicle.getOriginalVal(var) * test_vals[i])
+			vehicle.setVar(var, vehicle.getOriginalVal(var) * test_vals[test_no])
+		elif test_op == "inverse-product":
+			vehicle.setVar(var, vehicle.getOriginalVal(var) / test_vals[test_no])
 		elif test_op == "replace":
-			vehicle.setVar(var, test_vals[i])
+			vehicle.setVar(var, test_vals[test_no])
 
 	# solve under the new conditions
 	output.append(steady_solve(vehicle, segments))
-	times[i] = output[i][-1, O_TIME]
+	times[test_no] = output[test_no][-1, O_TIME]
 
-	print("\tTest " + str(i + 1) + " complete!")
+	print("\tTest " + str(test_no + 1) + " complete!")
 
 print("Plotting results...")
 
 # plot the study
 fig, ax = plt.subplots()
 
-ax.plot(plot_points, times, label=s_OBJ["plot_title"], marker='x', linestyle='-')
+plot_style = s_OBJ["plot_style"]
+if plot_style == "basic":
+	ax.plot(plot_points, times, label=s_OBJ["plot_title"], marker='x', linestyle='-')
+elif plot_style == "semilog":
+	ax.semilogx(plot_points, times, label=s_OBJ["plot_title"], marker='x', linestyle='-')
+
 ax.grid(True)
 ax.legend()
 

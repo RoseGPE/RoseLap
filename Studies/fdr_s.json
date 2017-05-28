@@ -1,4 +1,5 @@
 {
+	"vehicle": "basic.json",
 	"track": "ax.dxf",
 	"segment_distance": 0.25,
 	"tests": [{
