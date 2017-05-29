@@ -19,6 +19,7 @@ S_ENG_LIM_ACC = 2
 S_TIRE_LIM_ACC = 3
 S_SUSTAINING = 4
 S_DRAG_LIM = 5
+S_SHIFTING = 6
 
 # Output Index Constant Definitions (Columns)
 O_TIME = 0
@@ -45,6 +46,7 @@ def step(vehicle, prior_result, segment, brake, ingear):
   x0 = prior_result[O_DISTANCE];
   t0 = prior_result[O_TIME];
   gear = None
+  F_longitudinal = 0
 
   # Regardless of what you do, this much is true.
   F_lateral = vehicle.mass * (v0 ** 2) * segment.curvature
@@ -62,7 +64,8 @@ def step(vehicle, prior_result, segment, brake, ingear):
   if brake:
     F_ground_longitudinal = -F_ground_longitudinal_available # Assume we can lock up tires and bias is perfect
     status = S_BRAKING
-  else:
+    gear = prior_result[O_GEAR]
+  elif ingear != False:
     output_forces = [vehicle.eng_force(v0, gear_index) for gear_index in range(len(vehicle.gears))]
     gear = np.argmax(output_forces) # index tho
     F_ground_longitudinal = output_forces[gear] # Assume driver always goes hard, but never burns out
@@ -71,14 +74,15 @@ def step(vehicle, prior_result, segment, brake, ingear):
     if F_ground_longitudinal > F_ground_longitudinal_available:
       F_ground_longitudinal = F_ground_longitudinal_available
       status = S_TIRE_LIM_ACC
+  else:
+    gear = -1
+    F_longitudinal = 0
+    status = S_SHIFTING
 
   F_drag = vehicle.alpha_drag() * (v0 ** 2)
-
   if ingear:
     F_longitudinal = F_ground_longitudinal - F_drag
-  else:
-    F_longitudinal = 0
-  
+    
   a = F_longitudinal / vehicle.mass
 
   try:
@@ -86,7 +90,7 @@ def step(vehicle, prior_result, segment, brake, ingear):
   except:
     vf = 0
 
-  if abs(F_longitudinal) < 1e-3:
+  if abs(F_longitudinal) < 1e-3 and ingear:
     status = S_DRAG_LIM
 
   if vehicle.mass*vf**2*segment.curvature > vehicle.mu*(vehicle.mass*vehicle.g + vehicle.alpha_downforce()*vf**2):
@@ -102,6 +106,11 @@ def solve(vehicle, segments, v0 = 0):
   # set up initial stuctures
   output = np.zeros((len(segments), 8))
   ingear = True
+
+  def stepForward():
+    nonlocal output
+    nonlocal i
+    
   
   # get first output row
   output[0, O_VELOCITY] = v0
@@ -118,55 +127,81 @@ def solve(vehicle, segments, v0 = 0):
 
   # shifting set up
   shift_t = 0
+  dt_list = list()
   last_gear = output[0, O_GEAR]
   curr_gear = last_gear
+  doshift = False
+
   while i < len(segments):
     step_result = step(vehicle, output[i-1], segments[i], brake, ingear)
 
     ### BRAKING ###
-    # we've been told to try again, this time with brakes
+    # in a message from the future we've been told to try again, this time with brakes
     if i < failpt:
+      brake = True
+      
       output[i] = step_result
       i += 1
-      brake = True
-      continue
+      
+      shift_t = sum(dt_list)
+      doshift = True
 
     # we caught the issue too late, we need to back up even more
     elif i == failpt and step_result is None:
       lastsafept -= 1
       i = lastsafept
-      continue
+
+      if not ingear:
+        dt_list.pop()
 
     # the curve was too much, we need to back up and brake
     elif step_result is None:
       brake = True
+
       failpt = i
-      lastsafept = i-1
+      lastsafept = i - 1
       i = lastsafept
-      continue
+      
+      if not ingear:
+        dt_list.pop()
 
     # nothing's wrong, just how we like it :)
     else:
-      ### SHIFTING ###
+      brake = False
+      
+      output[i] = step_result
+      i += 1
+
+      doshift = True
+      
+
+    ### SHIFTING ###
+    if doshift:
+      i -= 1
       last_gear = curr_gear
       curr_gear = output[i, O_GEAR]
 
+      # we just got done shifting
+      if ingear == None:
+        output[i - 1][O_GEAR] = curr_gear
+        ingear = True
+
       # we are currently shifting
-      if not ingear:
-        shift_t += step_result[O_TIME] - output[i - 1, O_TIME] # effectively delta t
+      elif not ingear:
+        dt = step_result[O_TIME] - output[i - 1, O_TIME] # effectively delta t
+        shift_t += dt
+        dt_list.append(dt)
 
         if shift_t >= vehicle.shift_time:
-          ingear = True
+          ingear = None
 
       # we'd like to change gears
       elif last_gear != curr_gear:
-        ingear  = False
-        shift_t = 0
+        ingear = False
+        i -= 1
 
-      # set up for next iteration of loop
-      output[i] = step_result
       i += 1
-      brake = False
+      doshift = False
 
   return output
 
@@ -204,6 +239,7 @@ def plot_velocity_and_events(output, axis='x'):
     plt.xlabel('Distance travelled')
 
   ax[0].plot(xaxis,v,lw=5,label='Velocity')
+  #ax[0].plot(xaxis,t,lw=5,label='Time')
   ax[1].plot(xaxis,along,lw=4,label='Longitudinal g\'s')
   ax[1].plot(xaxis,alat,lw=4,label='Lateral g\'s')
   ax[1].plot(xaxis,gear,lw=4,label='Gear')
@@ -215,6 +251,7 @@ def plot_velocity_and_events(output, axis='x'):
   ax[0].fill_between(xaxis, 0, lim, where= status==3, facecolor='#1d95d2', alpha=alpha)
   ax[0].fill_between(xaxis, 0, lim, where= status==4, facecolor='#d2c81c', alpha=alpha)
   ax[0].fill_between(xaxis, 0, lim, where= status==5, facecolor='#e2a52b', alpha=alpha)
+  ax[0].fill_between(xaxis, 0, lim, where= status==6, facecolor='#b666d2', alpha=alpha)
 
   sector = sectors[0]
   for idx,sec in enumerate(sectors):
