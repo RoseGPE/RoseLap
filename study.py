@@ -69,7 +69,7 @@ for test_no in range(num_tests):
 			vehicle.setVar(var, test_vals[test_no])
 
 	# solve under the new conditions
-	output.append(steady_solve(vehicle, segments))
+	output.append(steady_solve(vehicle.v, segments))
 	times[test_no] = output[test_no][-1, O_TIME]
 
 	print("\tTest " + str(test_no + 1) + " complete!")
