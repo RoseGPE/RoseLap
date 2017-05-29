@@ -1,5 +1,5 @@
 g = 32.2 # ft/s^2
-mass = (300.0+150.0)/g #slug
+m = (300.0+150.0)/g #slug
 
 downforce_35mph = 65.0; # lbf
 def alpha_downforce():
@@ -8,6 +8,37 @@ def alpha_downforce():
 drag_35mph = 44.0 # lbf
 def alpha_drag():
     return drag_35mph/(51.33333**2); # lbf/(ft/s)^2
+
+
+def slip_angle_front():
+	return 0;
+
+def slip_angle_rear():
+	return 0;
+
+def height_CG():
+	return 0.8 # idk
+
+def weight_bias():
+	return 0.55 #idk
+
+def downforce_bias():
+	return 0.6 # idk
+
+def height_drag():
+	return 2 #idk
+
+def mass():
+	return m
+
+def CG_dist_from_front():
+	return 2.0 # idk
+
+def vehicle_length():
+	return 62.0/12.0
+
+def brake_bias():
+	return 0.55
 
 mu = 2.0; #coeff
 tire_radius = 0.75 #ft

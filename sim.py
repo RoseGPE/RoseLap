@@ -22,63 +22,67 @@ def step(vehicle,prior_result,segment,brake):
   @param brake a boolean value specifying whether or not to apply the brakes (with full available force)
   """
 
+  Nf = prior_result[3];
+  Nr = prior_result[4];
   v0 = prior_result[2];
   x0 = prior_result[1];
   t0 = prior_result[0];
 
-  # Regardless of what you do, this much is true.
-  F_lateral = vehicle.mass*v0**2*segment.curvature
-  F_down = vehicle.alpha_downforce()*v0**2;
-  F_total_available = vehicle.mu*(vehicle.mass*vehicle.g + F_down) # Will include aero later
+  Ff_lat = (1-vehicle.weight_bias())*segment.curvature*vehicle.mass()*v0**2
+  Fr_lat = vehicle.weight_bias()*segment.curvature*vehicle.mass()*v0**2
   
-  # If there isn't even enough grip to turn, you're in a bad situation.
-  if (F_lateral > F_total_available):
+  Fr_lim = (vehicle.mu*Nr)
+  Ff_lim = (vehicle.mu*Nf) 
+
+  if Fr_lat > Fr_lim or Ff_lat > Ff_lim :
+    # You have lost control!!
     return None
 
-  # Compute remaining available tire grip
-  F_ground_longitudinal_available = math.sqrt(F_total_available**2-F_lateral**2)
+  Fr_remaining = np.sqrt(Fr_lim**2 - Fr_lat**2)
+  Fr_engine_limit = 400
+  Ff_remaining = np.sqrt(Ff_lim**2 - Ff_lat**2)
 
-  gear = None
+  Fdown = vehicle.alpha_downforce()*v0**2;
+  Fdrag = vehicle.alpha_drag()*v0**2;
 
-  # Accelerate, or decelerate. Why do anything else?
   if brake:
-    F_ground_longitudinal = -F_ground_longitudinal_available # Assume we can lock up tires and bias is perfect
-    status = 1
+    F_brake = min(Ff_remaining/(1-vehicle.brake_bias()), Fr_remaining/vehicle.brake_bias())
+    Fr_long = -F_brake*vehicle.brake_bias()
+    Ff_long = -F_brake*(1-vehicle.brake_bias())
   else:
-    output_forces = [vehicle.eng_force(v0,gear) for gear in range(len(vehicle.gears))]
-    #print(output_forces)
-    gear = np.argmax(output_forces)
-    F_ground_longitudinal = output_forces[gear] # Assume driver always goes hard, but never burns out
-    status = 2
-    if F_ground_longitudinal > F_ground_longitudinal_available:
-      F_ground_longitudinal = F_ground_longitudinal_available
-      status = 3
-  #print('ok', vehicle.eng_force(v0))
-  F_drag = vehicle.alpha_drag()*v0**2
-  F_longitudinal = F_ground_longitudinal - F_drag
+    Fr_long = min(Fr_engine_limit, Ff_remaining);
+    Ff_long = 0
+
   
-  
-  a = F_longitudinal/vehicle.mass
+
+  a_long = (Fr_long+Ff_long-Fdrag)/vehicle.mass()
+
   try:
-    vf = math.sqrt(v0**2 + 2*a*segment.length)
+    vf = math.sqrt(v0**2 + 2*a_long*segment.length)
   except:
     vf=0
-  if abs(F_longitudinal) < 1e-3:
-    status=5
-  if vehicle.mass*vf**2*segment.curvature > vehicle.mu*(vehicle.mass*vehicle.g + vehicle.alpha_downforce()*vf**2):
-    vf=v0 # this isn't really right..... but seems to work
-    #vf=math.sqrt(vehicle.g*vehicle.mass*vehicle.mu/(segment.curvature*vehicle.mass-vehicle.alpha_downforce()*vehicle.mu))-1e-6
-    status = 4
 
   tf = t0+segment.length/((v0+vf)/2) if v0!=0 else 0;
   xf = x0+segment.length;
 
-  return np.array([tf,xf,vf,segment.sector,status,gear,a/vehicle.g, v0**2*segment.curvature/vehicle.g])
+  # normal forces, need recomputed
+  Nf = vehicle.mass()*(1-vehicle.weight_bias())*vehicle.g
+  Nr = vehicle.mass()*vehicle.weight_bias()*vehicle.g
 
-def solve(vehicle,segments,v0=0):
-  output = np.zeros((len(segments), 8))
+  output = np.array([tf,xf,vf,Nf,Nr,segment.sector,0,0,a_long/vehicle.g, v0**2*segment.curvature/vehicle.g])
+  #print('newer',output)
+  return output
+
+def solve(vehicle,segments,output_0=None):
+  output = np.zeros((len(segments), 10))
   
-  output[0,2] = v0
+  if output_0 is None:
+    output[0,3] = vehicle.mass()*(1-vehicle.weight_bias())*vehicle.g
+    output[0,4] = vehicle.mass()*vehicle.weight_bias()*vehicle.g
+  else:
+    output[0,:] = output_0
+    output[0,0] = 0
+    output[0,1] = 0
   step_result = step(vehicle,output[0], segments[0], False)
   output[0] = step_result
   i=1
@@ -86,37 +90,38 @@ def solve(vehicle,segments,v0=0):
   failpt = -1
   lastsafept = -1
   while i<len(segments):
+    if i<0:
+      print('damnit bobby')
+      return None
     step_result = step(vehicle,output[i-1,:], segments[i], brake)
-    #print 'Segment %d' % i
-    #print step_result
-    if i<failpt:
+    if step_result is None:
+      if not brake:
+        # Start braking
+        brake = True
+        failpt = i
+        lastsafept = i-1
+        i = lastsafept
+      else:
+        # Try again from an earlier point
+        lastsafept-=1
+        i=lastsafept
+    elif i<failpt:
       output[i] = step_result
       i+=1
       brake = True
-    elif i == failpt and step_result is None:
-      # evaulate; this braking didn't work
-      lastsafept-=1
-      i=lastsafept
-      #raw_input()
-
-    elif step_result is None:
-      # initiate braking algorithm
-      brake = True
-      failpt = i
-      lastsafept = i-1
-      i = lastsafept
-      #i-=1
     else:
       output[i] = step_result
       i+=1
       brake = False
+      failpt = -1
+      lastsafept = -1
   
 
   return output
 
 def steady_solve(vehicle,segments,v0=0):
   output=solve(vehicle,segments,v0)
-  return solve(vehicle,segments,output[-1,2])
+  return solve(vehicle,segments,output)
 
 def colorgen(num_colors, idx):
   color_norm  = colors.Normalize(vmin=0, vmax=num_colors-1)
@@ -131,12 +136,12 @@ def plot_velocity_and_events(output,axis='x'):
   x = output[:,1]
   v = output[:,2]
 
-  sectors = output[:,3]
-  status = output[:,4]
-  gear = output[:,5]
+  sectors = output[:,5]
+  status = output[:,6]
+  gear = output[:,7]
 
-  along = output[:,6]
-  alat = output[:,7]
+  along = output[:,8]
+  alat = output[:,9]
   
 
   if axis=='time':

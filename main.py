@@ -1,5 +1,5 @@
 from sim import *
-import vehicle_parameters_validation as vehicle
+import vehicle_parameters as vehicle
 track = './loop.dxf'
 
 if False:
@@ -131,9 +131,9 @@ if False:
 
 if True:
 
-	segs = track_segmentation.dxf_to_segments(track, 0.2)
+	segs = track_segmentation.dxf_to_segments(track, 0.1)
 	#track_segmentation.plot_segments(segs)
-	output = steady_solve(vehicle,segs)
+	output = solve(vehicle,segs)
 	print('Took %.3f seconds to travel %.1f feet' % (output[-1,0],output[-1,1]) )
 
 
