@@ -8,5 +8,6 @@
 	"engine_torque": [33.192, 73.76, 29.504],
 	"engine_reduction": 2.81,
 	"gears": [2.416, 1.92, 1.562, 1.277, 1.05],
-	"final_drive_reduction": 2.7692
+	"final_drive_reduction": 2.7692,
+	"shift_time": 0.2
 }

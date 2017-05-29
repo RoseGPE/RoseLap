@@ -31,12 +31,13 @@ O_LONG_ACC = 6
 O_LAT_ACC = 7
 
 
-def step(vehicle,prior_result,segment,brake):
+def step(vehicle, prior_result, segment, brake, ingear):
   """
   Takes a vehicle step. Returns (see last line) if successful, returns None if vehicle skids off into a wall.
   @param v0 the initial vehicle speed for this step
   @param segment the Segment of the track the vehicle is on
   @param brake a boolean value specifying whether or not to apply the brakes (with full available force)
+  @param ingear a boolean value specifying whether or not we are shifting (in gear vs. not)
   """
 
   # init values
@@ -72,7 +73,11 @@ def step(vehicle,prior_result,segment,brake):
       status = S_TIRE_LIM_ACC
 
   F_drag = vehicle.alpha_drag() * (v0 ** 2)
-  F_longitudinal = F_ground_longitudinal - F_drag
+
+  if ingear:
+    F_longitudinal = F_ground_longitudinal - F_drag
+  else:
+    F_longitudinal = 0
   
   a = F_longitudinal / vehicle.mass
 
@@ -94,31 +99,43 @@ def step(vehicle,prior_result,segment,brake):
   return np.array([tf, xf, vf, segment.sector, status, gear, a / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g])
 
 def solve(vehicle, segments, v0 = 0):
-  # set up output matrix
+  # set up initial stuctures
   output = np.zeros((len(segments), 8))
+  ingear = True
   
   # get first output row
   output[0, O_VELOCITY] = v0
-  step_result = step(vehicle, output[0], segments[0], False)
+  step_result = step(vehicle, output[0], segments[0], False, ingear)
   output[0] = step_result
 
+  # step loop set up
   i = 1
+
+  # braking set up
   brake = False
   failpt = -1
   lastsafept = -1
-  while i < len(segments):
-    step_result = step(vehicle, output[i-1], segments[i], brake)
 
+  # shifting set up
+  shift_t = 0
+  last_gear = output[0, O_GEAR]
+  curr_gear = last_gear
+  while i < len(segments):
+    step_result = step(vehicle, output[i-1], segments[i], brake, ingear)
+
+    ### BRAKING ###
     # we've been told to try again, this time with brakes
     if i < failpt:
       output[i] = step_result
       i += 1
       brake = True
+      continue
 
     # we caught the issue too late, we need to back up even more
     elif i == failpt and step_result is None:
       lastsafept -= 1
       i = lastsafept
+      continue
 
     # the curve was too much, we need to back up and brake
     elif step_result is None:
@@ -126,9 +143,27 @@ def solve(vehicle, segments, v0 = 0):
       failpt = i
       lastsafept = i-1
       i = lastsafept
+      continue
 
     # nothing's wrong, just how we like it :)
     else:
+      ### SHIFTING ###
+      last_gear = curr_gear
+      curr_gear = output[i, O_GEAR]
+
+      # we are currently shifting
+      if not ingear:
+        shift_t += step_result[O_TIME] - output[i - 1, O_TIME] # effectively delta t
+
+        if shift_t >= vehicle.shift_time:
+          ingear = True
+
+      # we'd like to change gears
+      elif last_gear != curr_gear:
+        ingear  = False
+        shift_t = 0
+
+      # set up for next iteration of loop
       output[i] = step_result
       i += 1
       brake = False

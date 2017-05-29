@@ -73,6 +73,7 @@ for test_no in range(num_tests):
 	times[test_no] = output[test_no][-1, O_TIME]
 
 	print("\tTest " + str(test_no + 1) + " complete!")
+	#plot_velocity_and_events(output[test_no])
 
 print("Plotting results...")
 
