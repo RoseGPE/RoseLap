@@ -71,11 +71,17 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
   if brake:
     F_ground_longitudinal = -F_ground_longitudinal_available # Assume we can lock up tires and bias is perfect
     status = S_BRAKING
-    gear = prior_result[O_GEAR]
+
+    if shifting == IN_PROGRESS:
+      gear = -1
+    else:
+      gear = prior_result[O_GEAR]
+
   elif shifting == IN_PROGRESS:
     gear = -1
     F_ground_longitudinal = 0
     status = S_SHIFTING
+
   elif shifting == JUST_FINISHED:
     gear = shift_goal
     F_ground_longitudinal = vehicle.eng_force(v0, int(gear))
@@ -84,7 +90,8 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
     if F_ground_longitudinal > F_ground_longitudinal_available:
       F_ground_longitudinal = F_ground_longitudinal_available
       status = S_TIRE_LIM_ACC
-  else:
+
+  elif shifting == NOT_SHIFTING:
     output_forces = [vehicle.eng_force(v0, gear_index) for gear_index in range(len(vehicle.gears))]
     gear = np.argmax(output_forces) # index tho
     F_ground_longitudinal = output_forces[gear] # Assume driver always goes hard, but never burns out
@@ -171,6 +178,18 @@ def solve(vehicle, segments, v0 = 0):
     else:
       brake = False
       doshift = True
+
+      if i == failpt:
+        output[i - 1][O_GEAR] = curr_gear
+        shifting = NOT_SHIFTING
+        doshift = False
+        shift_start = 0
+        shift_goal = 0
+        pow_goal = 0
+        last_gear = output[0, O_GEAR]
+        curr_gear = last_gear
+        doshift = False
+        #shift freely
       
       output[i] = step_result
       i += 1      
@@ -183,7 +202,7 @@ def solve(vehicle, segments, v0 = 0):
 
       # we just got done shifting
       if shifting == JUST_FINISHED:
-        output[i - 1][O_GEAR] = curr_gear
+        output[i - 1][O_GEAR] = curr_gear # only necessary the step after
 
         if output[i][O_ENG_FORCE] >= pow_goal:
           shifting = NOT_SHIFTING
@@ -199,8 +218,6 @@ def solve(vehicle, segments, v0 = 0):
         shift_start = i - 1
         shift_goal = curr_gear
         pow_goal = output[i][O_ENG_FORCE]
-        # print(shift_goal)
-        # print(pow_goal)
         i -= 1
 
       i += 1
@@ -211,7 +228,6 @@ def solve(vehicle, segments, v0 = 0):
 def steady_solve(vehicle,segments,v0=0):
   # TODO: Find a better way to do this #sketch
   output = solve(vehicle,segments,v0)
-  print("50%")
   return solve(vehicle,segments,output[-1, O_VELOCITY])
 
 def colorgen(num_colors, idx):
@@ -243,7 +259,7 @@ def plot_velocity_and_events(output, axis='x'):
     plt.xlabel('Distance travelled')
 
   ax[0].plot(xaxis,v,lw=5,label='Velocity')
-  #ax[0].plot(xaxis,t,lw=5,label='Time')
+  ax[0].plot(xaxis,t,lw=5,label='Time')
   ax[1].plot(xaxis,along,lw=4,label='Longitudinal g\'s')
   ax[1].plot(xaxis,alat,lw=4,label='Lateral g\'s')
   ax[1].plot(xaxis,gear,lw=4,label='Gear')
