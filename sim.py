@@ -37,7 +37,7 @@ JUST_FINISHED = 1
 NOT_SHIFTING = 2
 
 
-def step(vehicle, prior_result, segment, brake, shifting):
+def step(vehicle, prior_result, segment, brake, shifting, shift_goal, can_shift):
   """
   Takes a vehicle step. Returns (see last line) if successful, returns None if vehicle skids off into a wall.
   @param v0 the initial vehicle speed for this step
@@ -74,6 +74,14 @@ def step(vehicle, prior_result, segment, brake, shifting):
     gear = -1
     F_ground_longitudinal = 0
     status = S_SHIFTING
+  elif shifting == JUST_FINISHED:
+    gear = shift_goal
+    F_ground_longitudinal = vehicle.eng_force(v0, int(gear))
+    status = S_ENG_LIM_ACC
+
+    if F_ground_longitudinal > F_ground_longitudinal_available:
+      F_ground_longitudinal = F_ground_longitudinal_available
+      status = S_TIRE_LIM_ACC
   else:
     output_forces = [vehicle.eng_force(v0, gear_index) for gear_index in range(len(vehicle.gears))]
     gear = np.argmax(output_forces) # index tho
@@ -112,7 +120,7 @@ def solve(vehicle, segments, v0 = 0):
   
   # get first output row
   output[0, O_VELOCITY] = v0
-  step_result = step(vehicle, output[0], segments[0], False, shifting)
+  step_result = step(vehicle, output[0], segments[0], False, shifting, 0, True)
   output[0] = step_result
 
   # step loop set up
@@ -125,12 +133,14 @@ def solve(vehicle, segments, v0 = 0):
 
   # shifting set up
   shift_start = 0
+  shift_goal = 0
+  can_shift = True
   last_gear = output[0, O_GEAR]
   curr_gear = last_gear
   doshift = False
 
   while i < len(segments):
-    step_result = step(vehicle, output[i-1], segments[i], brake, shifting)
+    step_result = step(vehicle, output[i-1], segments[i], brake, shifting, shift_goal, can_shift)
 
     ### BRAKING ###
     # in a message from the future we've been told to try again, this time with brakes. otherwise everything's fine
@@ -182,6 +192,7 @@ def solve(vehicle, segments, v0 = 0):
       elif last_gear != curr_gear:
         shifting = IN_PROGRESS
         shift_start = i
+        shift_goal = curr_gear
         i -= 1
 
       i += 1

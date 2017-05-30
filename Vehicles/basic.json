@@ -1,7 +1,7 @@
 {
 	"mass": 550,
 	"downforce_35mph": 60,
-	"drag_35mph": 45,
+	"drag_35mph": 0,
 	"mu": 2.0,
 	"tire_radius": 0.75,
 	"engine_rpms": [1000.0, 3000.0, 9000.0],

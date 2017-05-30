@@ -59,6 +59,7 @@ def load(filename):
   v.engine_reduction = v_OBJ["engine_reduction"]
   v.gears = v_OBJ["gears"]
   v.final_drive_reduction = v_OBJ["final_drive_reduction"]
+  v.shift_time = v_OBJ["shift_time"]
   v.g = g
 
   v.v_OBJ = v_OBJ
