@@ -59,7 +59,9 @@ def step(vehicle,prior_result,segment,brake):
     return None
 
   Fr_remaining = np.sqrt(Fr_lim**2 - Fr_lat**2)
-  Fr_engine_limit = 400
+  Fr_engine_limits = [vehicle.eng_force(v0,g) for g in range(len(vehicle.gears))]
+  gear = np.argmax(Fr_engine_limits)
+  Fr_engine_limit = Fr_engine_limits[gear]
   Ff_remaining = np.sqrt(Ff_lim**2 - Ff_lat**2)
 
   Fdown = vehicle.alpha_downforce()*v0**2;
@@ -70,6 +72,7 @@ def step(vehicle,prior_result,segment,brake):
     F_brake = min(Ff_remaining/vehicle.front_brake_bias(), Fr_remaining/vehicle.rear_brake_bias())
     Fr_long = -F_brake*vehicle.rear_brake_bias()
     Ff_long = -F_brake*vehicle.front_brake_bias()
+    gear = -1
   else:
     status = S_TIRE_LIM_ACC
     Fr_long = min(Fr_engine_limit, Fr_remaining);
@@ -118,7 +121,7 @@ def step(vehicle,prior_result,segment,brake):
         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
 
-  output = np.array([tf, xf, vf, Nf, Nr, segment.sector, status, 0, a_long / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g, Ff_remaining, Fr_remaining])
+  output = np.array([tf, xf, vf, Nf, Nr, segment.sector, status, gear, a_long / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g, Ff_remaining, Fr_remaining])
   return output
 
 def solve(vehicle, segments, output_0 = None):
