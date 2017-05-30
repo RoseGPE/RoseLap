@@ -24,14 +24,17 @@ S_DRAG_LIM = 5
 O_TIME = 0
 O_DISTANCE = 1
 O_VELOCITY = 2
-O_SECTORS = 3
-O_STATUS = 4
-O_GEAR = 5
-O_LONG_ACC = 6
-O_LAT_ACC = 7
+O_NF = 3
+O_NR = 4
+O_SECTORS = 5
+O_STATUS = 6
+O_GEAR = 7
+O_LONG_ACC = 8
+O_LAT_ACC = 9
 
 
 def step(vehicle,prior_result,segment,brake):
+  status = -1
   """
   Takes a vehicle step. Returns (see last line) if successful, returns None if vehicle skids off into a wall.
   @param v0 the initial vehicle speed for this step
@@ -39,67 +42,97 @@ def step(vehicle,prior_result,segment,brake):
   @param brake a boolean value specifying whether or not to apply the brakes (with full available force)
   """
 
-  # init values
-  v0 = prior_result[O_VELOCITY];
-  x0 = prior_result[O_DISTANCE];
-  t0 = prior_result[O_TIME];
-  gear = None
+  Nf = prior_result[3];
+  Nr = prior_result[4];
+  v0 = prior_result[2];
+  x0 = prior_result[1];
+  t0 = prior_result[0];
 
-  # Regardless of what you do, this much is true.
-  F_lateral = vehicle.mass * (v0 ** 2) * segment.curvature
-  F_down = vehicle.alpha_downforce() * (v0 ** 2);
-  F_total_available = vehicle.mu * (vehicle.mass * vehicle.g + F_down) # Will include aero later
+  Ff_lat = (1-vehicle.weight_bias)*segment.curvature*vehicle.mass*v0**2
+  Fr_lat = vehicle.weight_bias*segment.curvature*vehicle.mass*v0**2
   
-  # If there isn't even enough grip to turn, you're in a bad situation.
-  if (F_lateral > F_total_available):
+  Fr_lim = (vehicle.mu*Nr)
+  Ff_lim = (vehicle.mu*Nf) 
+
+  if Fr_lat > Fr_lim or Ff_lat > Ff_lim :
+    # You have lost control!!
     return None
 
-  # Compute remaining available tire grip
-  F_ground_longitudinal_available = math.sqrt((F_total_available ** 2) - (F_lateral ** 2))
+  Fr_remaining = np.sqrt(Fr_lim**2 - Fr_lat**2)
+  Fr_engine_limit = 400
+  Ff_remaining = np.sqrt(Ff_lim**2 - Ff_lat**2)
 
-  # Accelerate, or decelerate. Why do anything else?
+  Fdown = vehicle.alpha_downforce()*v0**2;
+  Fdrag = vehicle.alpha_drag()*v0**2;
+
   if brake:
-    F_ground_longitudinal = -F_ground_longitudinal_available # Assume we can lock up tires and bias is perfect
     status = S_BRAKING
+    F_brake = min(Ff_remaining/vehicle.front_brake_bias(), Fr_remaining/vehicle.rear_brake_bias())
+    Fr_long = -F_brake*vehicle.rear_brake_bias()
+    Ff_long = -F_brake*vehicle.front_brake_bias()
   else:
-    output_forces = [vehicle.eng_force(v0, gear_index) for gear_index in range(len(vehicle.gears))]
-    gear = np.argmax(output_forces) # index tho
-    F_ground_longitudinal = output_forces[gear] # Assume driver always goes hard, but never burns out
-    status = S_ENG_LIM_ACC
+    status = S_TIRE_LIM_ACC
+    Fr_long = min(Fr_engine_limit, Fr_remaining);
+    Ff_long = 0
 
-    if F_ground_longitudinal > F_ground_longitudinal_available:
-      F_ground_longitudinal = F_ground_longitudinal_available
-      status = S_TIRE_LIM_ACC
-
-  F_drag = vehicle.alpha_drag() * (v0 ** 2)
-  F_longitudinal = F_ground_longitudinal - F_drag
-  
-  a = F_longitudinal / vehicle.mass
+  a_long = (Fr_long+Ff_long-Fdrag)/vehicle.mass
 
   try:
-    vf = math.sqrt((v0 ** 2) + 2 * a * segment.length)
+    vf = math.sqrt(v0**2 + 2*a_long*segment.length)
   except:
-    vf = 0
+    vf=0
 
-  if abs(F_longitudinal) < 1e-3:
-    status = S_DRAG_LIM
+  tf = t0+segment.length/((v0+vf)/2) if v0!=0 else 0;
+  xf = x0+segment.length;
 
-  if vehicle.mass*vf**2*segment.curvature > vehicle.mu*(vehicle.mass*vehicle.g + vehicle.alpha_downforce()*vf**2):
-    vf = v0
-    
-  status = S_SUSTAINING
+  Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
+      - Fdown*vehicle.weight_bias
+      - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+      + vehicle.mass*vehicle.g
+      + Fdown
+      - Fdrag*vehicle.cp_height/vehicle.wheelbase_length )
 
-  tf = t0 + segment.length / ((v0 + vf) / 2) if v0 != 0 else 0
-  xf = x0 + segment.length
+  Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+      + Fdown*vehicle.cp_bias
+      + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+      + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
 
-  return np.array([tf, xf, vf, segment.sector, status, gear, a / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g])
-
-def solve(vehicle, segments, v0 = 0):
-  # set up output matrix
-  output = np.zeros((len(segments), 8))
+  Ff_lat = (1-vehicle.weight_bias)*segment.curvature*vehicle.mass*v0**2
+  Fr_lat = vehicle.weight_bias*segment.curvature*vehicle.mass*v0**2
   
-  # get first output row
-  output[0, O_VELOCITY] = v0
+  Fr_lim = (vehicle.mu*Nr)
+  Ff_lim = (vehicle.mu*Nf) 
+
+  if Fr_lat > Fr_lim or Ff_lat > Ff_lim :
+    vf=v0
+    a_long=0
+    Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
+      - Fdown*vehicle.weight_bias
+      - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+      + vehicle.mass*vehicle.g
+      + Fdown
+      - Fdrag*vehicle.cp_height/vehicle.wheelbase_length )
+
+    Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+        + Fdown*vehicle.cp_bias
+        + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+        + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
+
+  output = np.array([tf, xf, vf, Nf, Nr, segment.sector, status, 0, a_long / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g, Ff_remaining, Fr_remaining])
+  return output
+
+def solve(vehicle, segments, output_0 = None):
+  # set up output matrix
+  output = np.zeros((len(segments), 12))
+  
+  if output_0 is None:
+    output[0,3] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g
+    output[0,4] = vehicle.mass*vehicle.weight_bias*vehicle.g
+  else:
+    output[0,:] = output_0
+    output[0,0] = 0
+    output[0,1] = 0
+
   step_result = step(vehicle, output[0], segments[0], False)
   output[0] = step_result
 
@@ -107,39 +140,70 @@ def solve(vehicle, segments, v0 = 0):
   brake = False
   failpt = -1
   lastsafept = -1
-  while i < len(segments):
-    step_result = step(vehicle, output[i-1], segments[i], brake)
-
-    # we've been told to try again, this time with brakes
-    if i < failpt:
+  while i<len(segments):
+    if i<0:
+      print('damnit bobby')
+      return None
+    step_result = step(vehicle,output[i-1,:], segments[i], brake)
+    if step_result is None:
+      if not brake:
+        # Start braking
+        brake = True
+        failpt = i
+        lastsafept = i-1
+        i = lastsafept
+      else:
+        # Try again from an earlier point
+        lastsafept-=1
+        i=lastsafept
+    elif i<failpt:
       output[i] = step_result
-      i += 1
+      i+=1
       brake = True
-
-    # we caught the issue too late, we need to back up even more
-    elif i == failpt and step_result is None:
-      lastsafept -= 1
-      i = lastsafept
-
-    # the curve was too much, we need to back up and brake
-    elif step_result is None:
-      brake = True
-      failpt = i
-      lastsafept = i-1
-      i = lastsafept
-
-    # nothing's wrong, just how we like it :)
     else:
       output[i] = step_result
-      i += 1
+      i+=1
       brake = False
+      failpt = -1
+      lastsafept = -1
+  # while i < len(segments):
+  #   step_result = step(vehicle, output[i-1], segments[i], brake)
 
+  #   # we've been told to try again, this time with brakes
+  #   if i < failpt:
+  #     if step_result is None:
+  #       print "wuh oh"
+  #       np.savetxt('dump.csv', output, delimiter=",")
+  #       return output
+  #     output[i] = step_result
+  #     i += 1
+  #     brake = True
+
+  #   # we caught the issue too late, we need to back up even more
+  #   elif i == failpt and step_result is None:
+  #     lastsafept -= 1
+  #     i = lastsafept
+
+  #   # the curve was too much, we need to back up and brake
+  #   elif step_result is None:
+  #     brake = True
+  #     failpt = i
+  #     lastsafept = i-1
+  #     i = lastsafept
+
+  #   # nothing's wrong, just how we like it :)
+  #   else:
+  #     output[i] = step_result
+  #     i += 1
+  #     brake = False
+
+  np.savetxt('dump.csv', output, delimiter=",")
   return output
 
-def steady_solve(vehicle,segments,v0=0):
+def steady_solve(vehicle,segments):
   # TODO: Find a better way to do this #sketch
-  output = solve(vehicle,segments,v0)
-  return solve(vehicle,segments,output[-1, O_VELOCITY])
+  output = solve(vehicle,segments)
+  return solve(vehicle,segments,output[-1, :])
 
 def colorgen(num_colors, idx):
   color_norm  = colors.Normalize(vmin=0, vmax=num_colors-1)
@@ -202,3 +266,17 @@ def plot_velocity_and_events(output, axis='x'):
   ax[1].legend()
 
   plt.draw()
+
+if __name__ == '__main__':
+  import vehicle
+  import track_segmentation
+
+  vehicle.load("basic.json")
+
+  track = './DXFs/loop.dxf'
+  segments = track_segmentation.dxf_to_segments(track, 0.25)
+
+  output = solve(vehicle.v, segments)
+
+  plot_velocity_and_events(output)
+  plt.show()

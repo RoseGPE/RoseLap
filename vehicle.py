@@ -18,7 +18,13 @@ class Vehicle(object):
     return v.downforce_35mph / (51.33333 ** 2); # lbf/(ft/s)^2
 
   def alpha_drag(self):
-      return v.drag_35mph / (51.33333 ** 2); # lbf/(ft/s)^2
+    return v.drag_35mph / (51.33333 ** 2); # lbf/(ft/s)^2
+
+  def front_brake_bias(self):
+    return v.brake_bias
+
+  def rear_brake_bias(self):
+    return 1-v.brake_bias
 
   def eng_force(self, vel, gear):
     gear_ratio = v.gears[gear]
@@ -47,16 +53,9 @@ def load(filename):
   with open(vehicle_JSON) as data:
     v_OBJ = json.load(data)
 
-  v.mass = (v_OBJ["mass"] * 2) / g
-  v.downforce_35mph = v_OBJ["downforce_35mph"]
-  v.drag_35mph = v_OBJ["drag_35mph"]
-  v.mu = v_OBJ["mu"]
-  v.tire_radius = v_OBJ["tire_radius"]
-  v.engine_rpms = v_OBJ["engine_rpms"]
-  v.engine_torque = v_OBJ["engine_torque"]
-  v.engine_reduction = v_OBJ["engine_reduction"]
-  v.gears = v_OBJ["gears"]
-  v.final_drive_reduction = v_OBJ["final_drive_reduction"]
+  for key in v_OBJ:
+    setattr(v, key, v_OBJ[key])
+  v.mass /= g
   v.g = g
 
   v.v_OBJ = v_OBJ
