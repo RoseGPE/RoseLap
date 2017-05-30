@@ -30,6 +30,7 @@ O_STATUS = 4
 O_GEAR = 5
 O_LONG_ACC = 6
 O_LAT_ACC = 7
+O_ENG_FORCE = 8
 
 # Shifting status codes
 IN_PROGRESS = 0
@@ -37,7 +38,7 @@ JUST_FINISHED = 1
 NOT_SHIFTING = 2
 
 
-def step(vehicle, prior_result, segment, brake, shifting, shift_goal, can_shift):
+def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
   """
   Takes a vehicle step. Returns (see last line) if successful, returns None if vehicle skids off into a wall.
   @param v0 the initial vehicle speed for this step
@@ -52,6 +53,7 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal, can_shift)
   t0 = prior_result[O_TIME];
   gear = None
   F_longitudinal = 0
+  shift_force = prior_result[O_ENG_FORCE]
 
   # Regardless of what you do, this much is true.
   F_lateral = vehicle.mass * (v0 ** 2) * segment.curvature
@@ -86,6 +88,7 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal, can_shift)
     output_forces = [vehicle.eng_force(v0, gear_index) for gear_index in range(len(vehicle.gears))]
     gear = np.argmax(output_forces) # index tho
     F_ground_longitudinal = output_forces[gear] # Assume driver always goes hard, but never burns out
+    shift_force = F_ground_longitudinal
     status = S_ENG_LIM_ACC
 
     if F_ground_longitudinal > F_ground_longitudinal_available:
@@ -111,16 +114,16 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal, can_shift)
   tf = t0 + segment.length / ((v0 + vf) / 2) if v0 != 0 else 0
   xf = x0 + segment.length
 
-  return np.array([tf, xf, vf, segment.sector, status, gear, a / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g])
+  return np.array([tf, xf, vf, segment.sector, status, gear, a / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g, shift_force])
 
 def solve(vehicle, segments, v0 = 0):
   # set up initial stuctures
-  output = np.zeros((len(segments), 8))
+  output = np.zeros((len(segments), 9))
   shifting = NOT_SHIFTING
   
   # get first output row
   output[0, O_VELOCITY] = v0
-  step_result = step(vehicle, output[0], segments[0], False, shifting, 0, True)
+  step_result = step(vehicle, output[0], segments[0], False, shifting, 0)
   output[0] = step_result
 
   # step loop set up
@@ -134,13 +137,13 @@ def solve(vehicle, segments, v0 = 0):
   # shifting set up
   shift_start = 0
   shift_goal = 0
-  can_shift = True
+  pow_goal = 0
   last_gear = output[0, O_GEAR]
   curr_gear = last_gear
   doshift = False
 
   while i < len(segments):
-    step_result = step(vehicle, output[i-1], segments[i], brake, shifting, shift_goal, can_shift)
+    step_result = step(vehicle, output[i-1], segments[i], brake, shifting, shift_goal)
 
     ### BRAKING ###
     # in a message from the future we've been told to try again, this time with brakes. otherwise everything's fine
@@ -181,7 +184,9 @@ def solve(vehicle, segments, v0 = 0):
       # we just got done shifting
       if shifting == JUST_FINISHED:
         output[i - 1][O_GEAR] = curr_gear
-        shifting = NOT_SHIFTING
+
+        if output[i][O_ENG_FORCE] >= pow_goal:
+          shifting = NOT_SHIFTING
 
       # we are currently shifting
       elif shifting == IN_PROGRESS:
@@ -189,10 +194,13 @@ def solve(vehicle, segments, v0 = 0):
           shifting = JUST_FINISHED
 
       # we'd like to change gears
-      elif last_gear != curr_gear:
+      elif last_gear != curr_gear and shifting == NOT_SHIFTING:
         shifting = IN_PROGRESS
-        shift_start = i
+        shift_start = i - 1
         shift_goal = curr_gear
+        pow_goal = output[i][O_ENG_FORCE]
+        # print(shift_goal)
+        # print(pow_goal)
         i -= 1
 
       i += 1
@@ -203,6 +211,7 @@ def solve(vehicle, segments, v0 = 0):
 def steady_solve(vehicle,segments,v0=0):
   # TODO: Find a better way to do this #sketch
   output = solve(vehicle,segments,v0)
+  print("50%")
   return solve(vehicle,segments,output[-1, O_VELOCITY])
 
 def colorgen(num_colors, idx):

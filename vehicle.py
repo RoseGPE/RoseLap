@@ -64,6 +64,8 @@ def load(filename):
 
   v.v_OBJ = v_OBJ
 
+  # TODO: be smart about this (setattr)
+
 def getOriginalVal(name):
   return v.v_OBJ[name]
 
