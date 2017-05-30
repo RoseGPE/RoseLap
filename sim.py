@@ -66,8 +66,10 @@ def step(vehicle,prior_result,segment,brake):
   xf = x0+segment.length;
 
   # normal forces, need recomputed
-  Nf = vehicle.mass()*(1-vehicle.weight_bias())*vehicle.g
-  Nr = vehicle.mass()*vehicle.weight_bias()*vehicle.g
+  #Nf = vehicle.mass()*(1-vehicle.weight_bias())*vehicle.g
+  #Nr = vehicle.mass()*vehicle.weight_bias()*vehicle.g
+
+  
 
   output = np.array([tf,xf,vf,Nf,Nr,segment.sector,0,0,a_long/vehicle.g, v0**2*segment.curvature/vehicle.g])
   #print('newer',output)
@@ -120,8 +122,8 @@ def solve(vehicle,segments,output_0=None):
   return output
 
 def steady_solve(vehicle,segments,v0=0):
-  output=solve(vehicle,segments,v0)
-  return solve(vehicle,segments,output)
+  output=solve(vehicle,segments)
+  return solve(vehicle,segments,output[0,:])
 
 def colorgen(num_colors, idx):
   color_norm  = colors.Normalize(vmin=0, vmax=num_colors-1)
