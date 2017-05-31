@@ -32,6 +32,7 @@ O_STATUS = 6
 O_GEAR = 7
 O_LONG_ACC = 8
 O_LAT_ACC = 9
+O_BEST_GEAR = 12
 
 # Shifting status codes
 IN_PROGRESS = 0
@@ -39,7 +40,7 @@ JUST_FINISHED = 1
 NOT_SHIFTING = 2
 
 
-def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
+def step(vehicle, prior_result, segment, brake, shifting, gear):
   """
   Takes a vehicle step. Returns (see last line) if successful, returns None if vehicle skids off into a wall.
   @param v0 the initial vehicle speed for this step
@@ -54,9 +55,7 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
   v0 = prior_result[O_VELOCITY];
   x0 = prior_result[O_DISTANCE];
   t0 = prior_result[O_TIME];
-  gear = None
   F_longitudinal = 0
-  shift_force = prior_result[O_ENG_FORCE]
 
   Ff_lat = (1-vehicle.weight_bias)*segment.curvature*vehicle.mass*v0**2
   Fr_lat = vehicle.weight_bias*segment.curvature*vehicle.mass*v0**2
@@ -69,27 +68,12 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
     return None
 
   Fr_remaining = np.sqrt(Fr_lim**2 - Fr_lat**2)
-  if shifting == IN_PROGRESS:
-    gear = -1
-  else:
-    gear = prior_result[O_GEAR]
 
-   elif shifting == IN_PROGRESS:
-    gear = -1
-    Fr_engine_limit = 0
-    status = S_SHIFTING
-
-  elif shifting == JUST_FINISHED:
-    gear = shift_goal
+  if not shifting:
     Fr_engine_limit = vehicle.eng_force(v0, int(gear))
-    status = S_ENG_LIM_ACC
-
-  elif shifting == NOT_SHIFTING:
-    output_forces = [vehicle.eng_force(v0, gear_index) for gear_index in range(len(vehicle.gears))]
-    gear = np.argmax(output_forces) # index tho
-    Fr_engine_limit = output_forces[gear] # Assume driver always goes hard, but never burns out
-    shift_force = Fr_engine_limit
-    status = S_ENG_LIM_ACC
+  else:
+    Fr_engine_limit = 0
+    gear = np.nan
 
   Ff_remaining = np.sqrt(Ff_lim**2 - Ff_lat**2)
 
@@ -101,7 +85,7 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
     F_brake = min(Ff_remaining/vehicle.front_brake_bias(), Fr_remaining/vehicle.rear_brake_bias())
     Fr_long = -F_brake*vehicle.rear_brake_bias()
     Ff_long = -F_brake*vehicle.front_brake_bias()
-    gear = -1
+    gear = np.nan
   else:
     status = S_TIRE_LIM_ACC
     Fr_long = min(Fr_engine_limit, Fr_remaining);
@@ -109,18 +93,15 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
 
   a_long = (Fr_long+Ff_long-Fdrag)/vehicle.mass
 
-  
-
- 
-
-  F_drag = vehicle.alpha_drag() * (v0 ** 2)
-  F_longitudinal = F_ground_longitudinal - F_drag
+  F_longitudinal = Ff_long+Fr_long - Fdrag
   a = F_longitudinal / vehicle.mass
 
   try:
     vf = math.sqrt(v0**2 + 2*a_long*segment.length)
   except:
+    a_long=0
     vf=0
+    #print ('blockt 1')
 
   if abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
     status = S_DRAG_LIM
@@ -144,6 +125,7 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
   Ff_lim = (vehicle.mu*Nf) 
 
   if Fr_lat > Fr_lim or Ff_lat > Ff_lim :
+    #print('blockt 2')
     vf=v0
     a_long=0
     Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
@@ -158,47 +140,56 @@ def step(vehicle, prior_result, segment, brake, shifting, shift_goal):
         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
 
-  output = np.array([tf, xf, vf, Nf, Nr, segment.sector, status, gear, a_long / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g, Ff_remaining, Fr_remaining, shift_force])
+  try:
+    tf = t0 + segment.length/((v0+vf)/2)
+  except:
+    tf = t0
+  xf = x0 + segment.length
+
+  output = np.array([tf, xf, vf, Nf, Nr, segment.sector, status, gear, a_long / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g, Ff_remaining, Fr_remaining])
+  #print output
   return output
 
 def solve(vehicle, segments, output_0 = None):
   # set up initial stuctures
-  output = np.zeros((len(segments), 13))
+  output = np.zeros((len(segments), 12))
   shifting = NOT_SHIFTING
   
   if output_0 is None:
     output[0,3] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g
     output[0,4] = vehicle.mass*vehicle.weight_bias*vehicle.g
+    gear = vehicle.best_gear(output[0,O_VELOCITY])
   else:
     output[0,:] = output_0
     output[0,0] = 0
     output[0,1] = 0
+    gear = vehicle.best_gear(output_0[O_VELOCITY])
 
-  step_result = step(vehicle, output[0], segments[0], False, shifting, 0)
+  brake = False
+  shiftpt = -1
+  shift_v_req = 0
+  
+  step_result = step(vehicle, output[0], segments[0], brake, shiftpt>=0, gear)
 
   output[0] = step_result
 
   # step loop set up
   i = 1
 
-  # shifting set up
-  shift_start = 0
-  shift_goal = 0
-  pow_goal = 0
-  last_gear = output[0, O_GEAR]
-  curr_gear = last_gear
-  doshift = False
+  
 
   # braking set up
-  brake = False
+  
   failpt = -1
   lastsafept = -1
-<<<<<<< HEAD
   while i<len(segments):
     if i<0:
       print('damnit bobby')
       return None
-    step_result = step(vehicle,output[i-1,:], segments[i], brake)
+    if (gear is None) and shiftpt < 0:
+      gear = vehicle.best_gear(output[i-1,O_VELOCITY])
+    #print(shiftpt,gear)
+    step_result = step(vehicle,output[i-1,:], segments[i], brake, shiftpt>=0, gear)
     if step_result is None:
       if not brake:
         # Start braking
@@ -210,61 +201,43 @@ def solve(vehicle, segments, output_0 = None):
         # Try again from an earlier point
         lastsafept-=1
         i=lastsafept
+      # reset shifting params
+      gear = None
+      shiftpt = -1
     elif i<failpt:
       output[i] = step_result
       i+=1
       brake = True
+      # reset shifting params
+      gear = None
+      shiftpt = -1
+      shift_v_req = 0
     else:
-      brake = False
-      doshift = True
+      # normal operation
 
-      if i == failpt:
-        output[i - 1][O_GEAR] = curr_gear
-        shifting = NOT_SHIFTING
-        doshift = False
-        shift_start = 0
-        shift_goal = 0
-        pow_goal = 0
-        last_gear = output[0, O_GEAR]
-        curr_gear = last_gear
-        doshift = False
-        #shift freely
-      
-      output[i] = step_result
-      i+=1
-      brake = False
+      # quit braking
+      brake = False # problematic??
       failpt = -1
       lastsafept = -1
 
+      output[i] = step_result
 
-    ### SHIFTING ###
-    if doshift:
-      i -= 1
-      last_gear = curr_gear
-      curr_gear = output[i, O_GEAR]
+      better_gear = vehicle.best_gear(output[i,O_VELOCITY])
+      #print(output[i,O_VELOCITY],shiftpt,'OPTIONS!',gear,better_gear)
+      if shiftpt < 0 and gear != better_gear and output[i,O_VELOCITY]>shift_v_req:
+        
+        gear = better_gear
+        shiftpt = i
+        shift_v_req = output[i,O_VELOCITY]*1.01
 
-      # we just got done shifting
-      if shifting == JUST_FINISHED:
-        output[i - 1][O_GEAR] = curr_gear # only necessary the step after
+      if shiftpt >= 0 and output[i,O_TIME] > output[shiftpt,O_TIME]+vehicle.shift_time:
+        shiftpt = -1
 
-        if output[i][O_ENG_FORCE] >= pow_goal:
-          shifting = NOT_SHIFTING
+      
+      
+      i+=1
 
-      # we are currently shifting
-      elif shifting == IN_PROGRESS:
-        if output[i][O_TIME] - output[shift_start][O_TIME] >= vehicle.shift_time:
-          shifting = JUST_FINISHED
-
-      # we'd like to change gears
-      elif last_gear != curr_gear and shifting == NOT_SHIFTING:
-        shifting = IN_PROGRESS
-        shift_start = i - 1
-        shift_goal = curr_gear
-        pow_goal = output[i][O_ENG_FORCE]
-        i -= 1
-
-      i += 1
-      doshift = False
+      
 
   np.savetxt('dump.csv', output, delimiter=",")
   return output

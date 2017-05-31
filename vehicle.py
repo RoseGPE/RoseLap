@@ -1,4 +1,5 @@
 import json
+import numpy as np
 
 """
 Vehicle Parameters Schema:
@@ -43,6 +44,10 @@ class Vehicle(object):
         if crank_rpm < v.engine_rpms[i]:
           torque = v.engine_torque[i] + (crank_rpm - v.engine_rpms[i]) * (v.engine_torque[i-1] - v.engine_torque[i]) / (v.engine_rpms[i-1] - v.engine_rpms[i])
           return torque * v.engine_reduction * gear_ratio * v.final_drive_reduction / v.tire_radius
+
+  def best_gear(self, v):
+    opts = [self.eng_force(v, int(gear)) for gear in range(len(self.gears))]
+    return np.argmax(opts)
 
   def __init__(self):
     pass
