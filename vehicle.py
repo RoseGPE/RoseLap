@@ -12,7 +12,9 @@ engine_torque: [float-array]
 engine_reduction: [float]
 gears: [float-array]
 final_drive_reduction: [float]
+shift_time: [float]
 """
+
 class Vehicle(object):
   def alpha_downforce(self):
     return v.downforce_35mph / (51.33333 ** 2); # lbf/(ft/s)^2
@@ -59,6 +61,8 @@ def load(filename):
   v.g = g
 
   v.v_OBJ = v_OBJ
+
+  # TODO: be smart about this (setattr)
 
 def getOriginalVal(name):
   return v.v_OBJ[name]

@@ -23,7 +23,7 @@ print("Loading test...")
 
 # load the study JSON into s_OBJ
 # study_JSON = './Studies/aero_scale_factor_s.json'
-study_JSON = './Studies/aero_efficiency_s.json'
+study_JSON = './Studies/shift_time_s.json'
 with open(study_JSON) as data:
   s_OBJ = json.load(data)
 
@@ -73,6 +73,7 @@ for test_no in range(num_tests):
 	times[test_no] = output[test_no][-1, O_TIME]
 
 	print("\tTest " + str(test_no + 1) + " complete!")
+	plot_velocity_and_events(output[test_no], "time")
 
 print("Plotting results...")
 
