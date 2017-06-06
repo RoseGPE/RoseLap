@@ -32,7 +32,7 @@ O_STATUS = 6
 O_GEAR = 7
 O_LONG_ACC = 8
 O_LAT_ACC = 9
-O_BEST_GEAR = 12
+O_CURVATURE = 12
 
 # Shifting status codes
 IN_PROGRESS = 0
@@ -40,7 +40,7 @@ JUST_FINISHED = 1
 NOT_SHIFTING = 2
 
 
-def step(vehicle, prior_result, segment, brake, shifting, gear):
+def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear, sustaining=False):
   """
   Takes a vehicle step. Returns (see last line) if successful, returns None if vehicle skids off into a wall.
   @param v0 the initial vehicle speed for this step
@@ -65,6 +65,7 @@ def step(vehicle, prior_result, segment, brake, shifting, gear):
 
   if Fr_lat > Fr_lim or Ff_lat > Ff_lim :
     # You have lost control!!
+    print('early crash')
     return None
 
   Fr_remaining = np.sqrt(Fr_lim**2 - Fr_lat**2)
@@ -85,7 +86,13 @@ def step(vehicle, prior_result, segment, brake, shifting, gear):
     F_brake = min(Ff_remaining/vehicle.front_brake_bias(), Fr_remaining/vehicle.rear_brake_bias())
     Fr_long = -F_brake*vehicle.rear_brake_bias()
     Ff_long = -F_brake*vehicle.front_brake_bias()
+    # Fr_long = -Fr_remaining
+    # Ff_long = -Ff_remaining
     gear = np.nan
+  elif sustaining:
+    status = S_SUSTAINING
+    Fr_long = min(Fdrag, Fr_remaining)
+    Ff_long = 0
   else:
     status = S_TIRE_LIM_ACC
     Fr_long = min(Fr_engine_limit, Fr_remaining);
@@ -101,7 +108,7 @@ def step(vehicle, prior_result, segment, brake, shifting, gear):
   except:
     a_long=0
     vf=0
-    #print ('blockt 1')
+    print ('blockt 1')
 
   if abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
     status = S_DRAG_LIM
@@ -118,16 +125,26 @@ def step(vehicle, prior_result, segment, brake, shifting, gear):
       + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
       + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
 
-  Ff_lat = (1-vehicle.weight_bias)*segment.curvature*vehicle.mass*v0**2
-  Fr_lat = vehicle.weight_bias*segment.curvature*vehicle.mass*v0**2
+  Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
+  Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
   
   Fr_lim = (vehicle.mu*Nr)
   Ff_lim = (vehicle.mu*Nf) 
 
-  if Fr_lat > Fr_lim or Ff_lat > Ff_lim :
-    #print('blockt 2')
-    vf=v0
-    a_long=0
+  a_long_start = a_long
+  
+  nmax = 10
+  n = 0
+  issues = False
+  while Fr_lat > Fr_lim-1e-2 or Ff_lat > Ff_lim-1e-2 :
+    issues = True
+    #return None
+    a_long-=a_long_start*1/nmax
+    vf = math.sqrt(v0**2 + 2*a_long*segment.length)
+
+    Fdown = vehicle.alpha_downforce()*vf**2;
+    Fdrag = vehicle.alpha_drag()*vf**2;
+
     Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
       - Fdown*vehicle.weight_bias
       - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
@@ -140,19 +157,33 @@ def step(vehicle, prior_result, segment, brake, shifting, gear):
         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
 
+    Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
+    Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+    
+    Fr_lim = (vehicle.mu*Nr)
+    Ff_lim = (vehicle.mu*Nf)
+
+    n+=1
+    if n > nmax:
+      return None
+
+  #if issues:
+  #  print a_long/a_long_start
+
   try:
     tf = t0 + segment.length/((v0+vf)/2)
   except:
     tf = t0
   xf = x0 + segment.length
 
-  output = np.array([tf, xf, vf, Nf, Nr, segment.sector, status, gear, a_long / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g, Ff_remaining, Fr_remaining])
-  #print output
+  
+
+  output = np.array([tf, xf, vf, Nf, Nr, segment.sector, status, gear, a_long / vehicle.g, (v0 ** 2) * segment.curvature / vehicle.g, Ff_remaining, Fr_remaining, segment.curvature])
   return output
 
 def solve(vehicle, segments, output_0 = None):
   # set up initial stuctures
-  output = np.zeros((len(segments), 12))
+  output = np.zeros((len(segments), 13))
   shifting = NOT_SHIFTING
   
   if output_0 is None:
@@ -165,11 +196,13 @@ def solve(vehicle, segments, output_0 = None):
     output[0,1] = 0
     gear = vehicle.best_gear(output_0[O_VELOCITY])
 
+  sustaining = False
+  curvature_sustaining = 0
   brake = False
   shiftpt = -1
   shift_v_req = 0
   
-  step_result = step(vehicle, output[0], segments[0], brake, shiftpt>=0, gear)
+  step_result = step(vehicle, output[0], segments[0], segments[1], brake, shiftpt>=0, gear, sustaining)
 
   output[0] = step_result
 
@@ -189,7 +222,9 @@ def solve(vehicle, segments, output_0 = None):
     if (gear is None) and shiftpt < 0:
       gear = vehicle.best_gear(output[i-1,O_VELOCITY])
     #print(shiftpt,gear)
-    step_result = step(vehicle,output[i-1,:], segments[i], brake, shiftpt>=0, gear)
+    if sustaining and curvature_sustaining < segments[i].curvature:
+      sustaining = False
+    step_result = step(vehicle,output[i-1,:], segments[i], (segments[i+1] if i+1<len(segments) else segments[i]), brake, shiftpt>=0, gear, sustaining)
     if step_result is None:
       if not brake:
         # Start braking
@@ -197,11 +232,15 @@ def solve(vehicle, segments, output_0 = None):
         failpt = i
         lastsafept = i-1
         i = lastsafept
+        #plot_velocity_and_events(output)
+        #plt.show()
       else:
         # Try again from an earlier point
         lastsafept-=1
         i=lastsafept
       # reset shifting params
+      curvature_sustaining = 0
+      sustaining = False
       gear = None
       shiftpt = -1
     elif i<failpt:
@@ -209,6 +248,8 @@ def solve(vehicle, segments, output_0 = None):
       i+=1
       brake = True
       # reset shifting params
+      curvature_sustaining = 0
+      sustaining = False
       gear = None
       shiftpt = -1
       shift_v_req = 0
@@ -233,7 +274,9 @@ def solve(vehicle, segments, output_0 = None):
       if shiftpt >= 0 and output[i,O_TIME] > output[shiftpt,O_TIME]+vehicle.shift_time:
         shiftpt = -1
 
-      
+      #if not sustaining and output[i,O_STATUS] == S_SUSTAINING:
+      #  sustaining = True
+      #  curvature_sustaining = segments[i].curvature
       
       i+=1
 
@@ -268,6 +311,8 @@ def plot_velocity_and_events(output, axis='x'):
   along = output[:, O_LONG_ACC]
   alat = output[:, O_LAT_ACC]
 
+  curv = output[:, O_CURVATURE]*100
+
   if axis == 'time':
     plt.xlabel('Elapsed time')
     xaxis = t
@@ -276,19 +321,19 @@ def plot_velocity_and_events(output, axis='x'):
     plt.xlabel('Distance travelled')
 
   ax[0].plot(xaxis,v,lw=5,label='Velocity')
-  ax[0].plot(xaxis,t,lw=5,label='Time')
+  ax[0].plot(xaxis,curv,lw=5,label='Curvature',marker='.',linestyle='none')
   ax[1].plot(xaxis,along,lw=4,label='Longitudinal g\'s')
   ax[1].plot(xaxis,alat,lw=4,label='Lateral g\'s')
   ax[1].plot(xaxis,gear,lw=4,label='Gear')
 
   lim = max(v)
   alpha = 0.5
-  ax[0].fill_between(xaxis, 0, lim, where= status==1, facecolor='#e23030', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==2, facecolor='#50d21d', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==3, facecolor='#1d95d2', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==4, facecolor='#d2c81c', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==5, facecolor='#e2a52b', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==6, facecolor='#b666d2', alpha=alpha)
+  # ax[0].fill_between(xaxis, 0, lim, where= status==1, facecolor='#e23030', alpha=alpha)
+  # ax[0].fill_between(xaxis, 0, lim, where= status==2, facecolor='#50d21d', alpha=alpha)
+  # ax[0].fill_between(xaxis, 0, lim, where= status==3, facecolor='#1d95d2', alpha=alpha)
+  # ax[0].fill_between(xaxis, 0, lim, where= status==4, facecolor='#d2c81c', alpha=alpha)
+  # ax[0].fill_between(xaxis, 0, lim, where= status==5, facecolor='#e2a52b', alpha=alpha)
+  # ax[0].fill_between(xaxis, 0, lim, where= status==6, facecolor='#b666d2', alpha=alpha)
 
   sector = sectors[0]
   for idx,sec in enumerate(sectors):
@@ -298,7 +343,7 @@ def plot_velocity_and_events(output, axis='x'):
   ax[0].set_ylim((0,lim+1))
   #ax[1].set_ylim((min((min(along),min(alat)))-0.1,0.1+max((max(along),max(alat)))))
   ax[1].set_ylim(-5,5)
-  plt.xlim((0,xaxis[-1]))
+  plt.xlim((0,max(xaxis)))
 
   #sectors = set(output[:,3])
   #for sector in sectors:
@@ -317,10 +362,18 @@ if __name__ == '__main__':
 
   vehicle.load("basic.json")
 
-  track = './DXFs/loop.dxf'
-  segments = track_segmentation.dxf_to_segments(track, 0.25)
+  track = './DXFs/ax2.dxf'
+  segments = track_segmentation.dxf_to_segments(track, 1)
 
   output = solve(vehicle.v, segments)
 
   plot_velocity_and_events(output)
+
+  # for i in range(len(segments)):
+  #   print output[i]
+  #   print output[i,O_VELOCITY]
+  #   print segments[i].sector
+  #   print segments[i].curvature
+  #   raw_input()
+
   plt.show()

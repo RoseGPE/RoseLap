@@ -87,6 +87,7 @@ def load_dxf(path_to_file):
 
 def pointify_dxf(dxf_output, connectivity, dl):
   pts = []
+  intermediates = []
   for index in connectivity:
     shape = dxf_output[index]
     #print(shape[0])
@@ -96,8 +97,8 @@ def pointify_dxf(dxf_output, connectivity, dl):
       length = math.sqrt(dx**2 + dy**2)
       n = int(math.ceil(length/dl))
       for i in range(n):
-        x=shape[1] + dx/n*i
-        y=shape[2] + dy/n*i
+        x=shape[1] + dx/n*(i+0)
+        y=shape[2] + dy/n*(i+0)
         pts.append((x,y ,index))
         #print(x,y)
     if shape[0] == 'arc':
@@ -106,17 +107,19 @@ def pointify_dxf(dxf_output, connectivity, dl):
       n = int(math.ceil(theta_range/dtheta))
       if shape[6] > 0:
         for i in range(n):
-          x=shape[1]+shape[3]*math.cos(math.radians(shape[4] + theta_range/n*i))
-          y=shape[2]+shape[3]*math.sin(math.radians(shape[4] + theta_range/n*i))
+          x=shape[1]+shape[3]*math.cos(math.radians(shape[4] + theta_range/n*(i)))
+          y=shape[2]+shape[3]*math.sin(math.radians(shape[4] + theta_range/n*(i)))
           pts.append((x,y, index))
           #print(x,y)
       else:
         for i in range(n):
-          x=shape[1]+shape[3]*math.cos(math.radians(shape[5] - theta_range/n*i))
-          y=shape[2]+shape[3]*math.sin(math.radians(shape[5] - theta_range/n*i))
+          x=shape[1]+shape[3]*math.cos(math.radians(shape[5] - theta_range/n*(i)))
+          y=shape[2]+shape[3]*math.sin(math.radians(shape[5] - theta_range/n*(i)))
           pts.append((x,y, index))
           #print(x,y)
-  return np.array(pts)
+    if index!=connectivity[-1]:
+      intermediates.append(len(pts))
+  return (np.array(pts),intermediates)
 
 class Segment(object):
   def __init__(self,x1,y1,x2,y2,x3,y3,sector):
@@ -137,7 +140,7 @@ class Segment(object):
     self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
     self.sector = sector;
 
-def seg_points(points):
+def seg_points(points,intermediates):
   segs=[]
   for i in range(points.shape[0]):
     im=i-1
@@ -147,6 +150,9 @@ def seg_points(points):
     if ip >= points.shape[0]:
       ip = 0
     segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], points[i,2]))
+  for i in intermediates:
+    #print (segs[i-1].curvature, segs[i].curvature, segs[i-1].curvature)
+    segs[i].curvature = (segs[i-1].curvature+segs[i+1].curvature)/2
   return segs
 
 def plot_segments(segments):
@@ -174,8 +180,9 @@ def plot_segments(segments):
 def dxf_to_segments(filename, dl):
   # The function you came here for. Hand it a filename and desired segment distance, you get segments of the track.
   dxf_geometry,connectivity = load_dxf(filename)
-  points = pointify_dxf(dxf_geometry,connectivity,dl)
-  segs = seg_points(points)
+  points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
+  #print (connectivity)
+  segs = seg_points(points,intermediates)
   return segs
 
 if __name__ == '__main__':
