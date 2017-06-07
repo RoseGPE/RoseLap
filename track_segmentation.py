@@ -7,7 +7,7 @@ import time
 
 import matplotlib.pyplot as plt
 
-epsilon = 1e-3
+epsilon = 1e-4
 
 def load_dxf(path_to_file):
   with open(path_to_file,'r') as p:
@@ -83,7 +83,11 @@ def load_dxf(path_to_file):
           if (dxf_output[matches_neg[0]][0] == 'arc'):
             dxf_output[matches_neg[0]][6]*=-1;
           hop = dxf_output[matches_neg[0]][-2:]
-    return (dxf_output, connectivity)
+    open_ended = False
+    if ( (abs(dxf_output[connectivity[-1]][-4] - dxf_output[connectivity[0]][-2]) > epsilon or abs(dxf_output[connectivity[-1]][-3] - dxf_output[connectivity[0]][-1]) > epsilon)
+      and (abs(dxf_output[connectivity[-1]][-2] - dxf_output[connectivity[0]][-4]) > epsilon or abs(dxf_output[connectivity[-1]][-1] - dxf_output[connectivity[0]][-3]) > epsilon)) :
+      open_ended=True
+    return (dxf_output, connectivity, open_ended)
 
 def pointify_dxf(dxf_output, connectivity, dl):
   pts = []
@@ -122,34 +126,44 @@ def pointify_dxf(dxf_output, connectivity, dl):
   return (np.array(pts),intermediates)
 
 class Segment(object):
-  def __init__(self,x1,y1,x2,y2,x3,y3,sector):
+  def __init__(self,x1,y1,x2,y2,x3,y3,sector,endpoint):
     self.x_m=x1; self.x=x2; self.x_p=x3; self.y_m=y1; self.y=y2; self.y_p=y3;
     self.length_m = math.hypot(self.x_m-self.x, self.y_m-self.y)
     self.length_p = math.hypot(self.x_p-self.x, self.y_p-self.y)
     self.length_secant = math.hypot(self.x_p-self.x_m, self.y_p-self.y_m)
     self.length = (self.length_m+self.length_p)/2
-    
-    p = (self.length_m+self.length_p+self.length_secant)/2
-    #print(p, self.length_m, self.length_p, self.length_secant)
-    try:
-      area = math.sqrt(p*(p-self.length_m)*(p-self.length_p)*(p-self.length_secant))
-    except ValueError:
-      area=0
-
-
-    self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
     self.sector = sector;
 
-def seg_points(points,intermediates):
+    if endpoint:
+      self.curvature = 0
+    else:
+      p = (self.length_m+self.length_p+self.length_secant)/2
+      #print(p, self.length_m, self.length_p, self.length_secant)
+      try:
+        area = math.sqrt(p*(p-self.length_m)*(p-self.length_p)*(p-self.length_secant))
+      except ValueError:
+        area=0
+
+      self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
+    
+
+def seg_points(points,intermediates,open_ended):
   segs=[]
   for i in range(points.shape[0]):
+    overk = False
     im=i-1
     if im < 0:
       im = points.shape[0]-1
+      if open_ended:
+        overk = True
+        im = 0
     ip=i+1
     if ip >= points.shape[0]:
       ip = 0
-    segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], points[i,2]))
+      if open_ended:
+        overk = True
+        ip = i
+    segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], points[i,2], overk))
   for i in intermediates:
     #print (segs[i-1].curvature, segs[i].curvature, segs[i-1].curvature)
     segs[i].curvature = (segs[i-1].curvature+segs[i+1].curvature)/2
@@ -179,10 +193,10 @@ def plot_segments(segments):
 
 def dxf_to_segments(filename, dl):
   # The function you came here for. Hand it a filename and desired segment distance, you get segments of the track.
-  dxf_geometry,connectivity = load_dxf(filename)
+  dxf_geometry,connectivity,open_ended = load_dxf(filename)
   points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
   #print (connectivity)
-  segs = seg_points(points,intermediates)
+  segs = seg_points(points,intermediates,open_ended)
   return segs
 
 if __name__ == '__main__':

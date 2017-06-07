@@ -1,6 +1,6 @@
 {
 	"vehicle": "basic.json",
-	"track": "ax.dxf",
+	"track": "accel.dxf",
 	"segment_distance": 0.3,
 	"tests": [{
 			"target": "shift_extra_factor",

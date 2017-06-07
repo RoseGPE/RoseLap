@@ -5,14 +5,6 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 
-"""
-Statuses:
-1. braking
-2. engine limited acceleration
-3. tire grip limited acceleration
-4. sustaining speed to prevent going out of curve
-5. topped out; drag limitation
-"""
 # Status Constant Definition
 S_BRAKING = 1
 S_ENG_LIM_ACC = 2
@@ -20,6 +12,7 @@ S_TIRE_LIM_ACC = 3
 S_SUSTAINING = 4
 S_DRAG_LIM = 5
 S_SHIFTING = 6
+S_TOPPED_OUT = 7
 
 # Output Index Constant Definitions (Columns)
 O_TIME = 0
@@ -55,6 +48,7 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   v0 = prior_result[O_VELOCITY];
   x0 = prior_result[O_DISTANCE];
   t0 = prior_result[O_TIME];
+  status = S_TOPPED_OUT
   F_longitudinal = 0
 
   Ff_lat = (1-vehicle.weight_bias)*segment.curvature*vehicle.mass*v0**2
@@ -110,6 +104,8 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
   if abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
     status = S_DRAG_LIM
+  if abs(Fr_engine_limit) < 1e-3 :
+    status = S_TOPPED_OUT
 
   Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
       - Fdown*vehicle.weight_bias
@@ -261,7 +257,7 @@ def solve(vehicle, segments, output_0 = None):
 
       if output[i,O_STATUS]==S_ENG_LIM_ACC and shiftpt < 0 and gear != better_gear and output[i,O_VELOCITY]>shift_v_req:
         
-        gear = better_gear
+        gear += int((better_gear-gear)/abs(better_gear-gear))
         shiftpt = i
         shift_v_req = output[i,O_VELOCITY]*1.01
 
@@ -317,14 +313,15 @@ def plot_velocity_and_events(output, axis='x'):
   ax[1].plot(xaxis,gear,lw=4,label='Gear')
 
   lim = max(v)
-  alpha = 0.5
+  alpha =  1
 
-  ax[0].fill_between(xaxis, 0, lim, where= status==S_BRAKING, facecolor='#e23030', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==S_ENG_LIM_ACC, facecolor='#50d21d', alpha=alpha)
+  ax[0].fill_between(xaxis, 0, lim, where= status==S_BRAKING,      facecolor='#e22030', alpha=alpha)
+  ax[0].fill_between(xaxis, 0, lim, where= status==S_ENG_LIM_ACC,  facecolor='#50d21d', alpha=alpha)
   ax[0].fill_between(xaxis, 0, lim, where= status==S_TIRE_LIM_ACC, facecolor='#1d95d2', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==S_SUSTAINING, facecolor='#d2c81c', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==S_DRAG_LIM, facecolor='#e2a52b', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==S_SHIFTING, facecolor='#b666d2', alpha=alpha)
+  ax[0].fill_between(xaxis, 0, lim, where= status==S_SUSTAINING,   facecolor='#d2c81c', alpha=alpha)
+  ax[0].fill_between(xaxis, 0, lim, where= status==S_DRAG_LIM,     facecolor='#e2952b', alpha=alpha)
+  ax[0].fill_between(xaxis, 0, lim, where= status==S_SHIFTING,     facecolor='#454545', alpha=alpha)
+  ax[0].fill_between(xaxis, 0, lim, where= status==S_TOPPED_OUT,   facecolor='#7637a2', alpha=alpha)
 
   sector = sectors[0]
   for idx,sec in enumerate(sectors):
@@ -353,8 +350,10 @@ if __name__ == '__main__':
 
   vehicle.load("basic.json")
 
-  track = './DXFs/ax.dxf'
-  segments = track_segmentation.dxf_to_segments(track, 0.5)
+  track = './DXFs/accel.dxf'
+  segments = track_segmentation.dxf_to_segments(track, 0.1)
+
+  #track_segmentation.plot_segments(segments)
 
   output = solve(vehicle.v, segments)
 
