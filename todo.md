@@ -8,5 +8,6 @@ Tracks
 - Ellipses and splines, etc.
 
 Analysis (Studies)
-- 3D studies
 - Not sure if varying engine curves is doable yet?
+- Move over to YAML
+- Find a way to look at individual plots
