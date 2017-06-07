@@ -1,3 +1,8 @@
+'''
+TO DO:
+solve style param
+'''
+
 from sim import *
 import vehicle
 import track_segmentation
@@ -23,10 +28,16 @@ plot_y_label: [string]
 plot_points: [float-array]
 """
 
+def testPointToMatrixValue():
+	def getval(t, t2):
+		times[test_points.index(t), test_points2.index(t2)]
+	return getval
+
+
 print("Loading test...")
 
 # load the study JSON into s_OBJ
-study_JSON = './Studies/shift_vs_mu_s.json'
+study_JSON = './Studies/3d_zoom.json'
 with open(study_JSON) as data:
   s_OBJ = json.load(data)
 
@@ -58,7 +69,6 @@ try: # run 2D test
 
 	num_xtests = len(test_points[0])
 	num_ytests = len(test_points2[0])
-	output = []
 
 	# set up some preliminary values
 	times = np.zeros((len(segList), num_xtests, num_ytests))
@@ -67,6 +77,8 @@ try: # run 2D test
 		print("\tTesting track " + str(seg_no + 1) + "...")
 
 		for test_no in range(num_xtests):
+			print("\t\tTesting parameter row " + str(test_no + 1) + "...")
+
 			# alter the test variables as need be
 			for var_no, var in enumerate(targets):
 				test_op = operations[var_no]
@@ -91,28 +103,58 @@ try: # run 2D test
 						elif test_op2 == "inverse-product":
 							vehicle.setVar(var2, vehicle.getOriginalVal(var2) / test_vals2[test2_no])
 						elif test_op2 == "replace":
-							vehicle.setVar(var2, test_vals[test2_no])
+							vehicle.setVar(var2, test_vals2[test2_no])
 
 					# solve under the new conditions
-					output.append(steady_solve(vehicle.v, segList[seg_no]))
-					times[seg_no, test_no, test2_no] = output[test_no][-1, O_TIME]
+					times[seg_no, test_no, test2_no] = steady_solve(vehicle.v, segList[seg_no])[-1, O_TIME]
 
-			print("\t\tTest row " + str(test_no + 1) + " complete!")
+					print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
+
 			# plot_velocity_and_events(output[test_no], "time")
 
-		output = []
+	# plot the study
+	print("Plotting results...")
 
 	for seg_no in range(len(segList)):
-		print("Plotting results...")
+		fig, ax = plt.subplots()
 
-		plt.imshow(times[seg_no], cmap='hot')
-		plt.colorbar(im, orientation='horizontal')
+		# data setup
+		X1 = np.array(test_points)
+		Y1 = np.array(test_points2)
+		X, Y = np.meshgrid(X1, Y1)
+		Z = np.transpose(times[seg_no])
+
+		# plotting shaded regions
+		CS = plt.contourf(X, Y, Z, 200, cmap="GnBu")
+		cbar = plt.colorbar(CS)
+
+		# plotting min track time
+		minval = Z.min()
+		itemindex = np.where(Z==minval)
+		ys, xs = itemindex
+		minx = X1[0, xs[0]]
+		miny = Y1[0, ys[0]]
+
+		plt.scatter(minx, miny, marker="o", s=20, label="Min Track Time", zorder=10)
+
+		# adding labels + legibility
+		plt.legend()
+
+		plt.xticks(X1[0])
+		plt.yticks(Y1[0])
+		plt.grid(True)
+
+		plt.title(s_OBJ["plot_title"] + " for " + tracks[seg_no])
 		plt.xlabel(s_OBJ["plot_x_label"])
 		plt.ylabel(s_OBJ["plot_y_label"])
-	
+
+		plt.draw()
+		fig.show()
+
+	print("Done!")
 	plt.show()
 
-except Exception as e: # run 1D test
+except KeyError as e: # run 1D test
 	print("Running tests...")
 
 	# set up some preliminary values
@@ -171,3 +213,4 @@ except Exception as e: # run 1D test
 	print("Done!")
 
 	plt.show()
+
