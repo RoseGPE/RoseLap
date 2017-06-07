@@ -1,3 +1,8 @@
+'''
+TO DO:
+solve style param
+'''
+
 from sim import *
 import vehicle
 import track_segmentation
@@ -7,23 +12,32 @@ import json
 Study Schema:
 vehicle: [string] filename for .json in the Vehicles directory
 track: [string] filename for .dxf in the DXFs directory
-segment_distance: [float]
+segment_distance: [float-array]
 tests: [object-array]
 	target: [string] vehicle parameter to alter
 	operation: 'replace' || 'product' || 'inverse-product'
 	test_vals: [float-array]
-plot_style: 'semilog' || 'basic'
+tests2: [object-array] (optional)
+	target: [string] vehicle parameter to alter
+	operation: 'replace' || 'product' || 'inverse-product'
+	test_vals: [float-array]
+plot_style: 'semilog' || 'basic' || 'heatmap' || 'bars'
 plot_title: [string]
 plot_x_label: [string]
 plot_y_label: [string]
 plot_points: [float-array]
 """
 
+def testPointToMatrixValue():
+	def getval(t, t2):
+		times[test_points.index(t), test_points2.index(t2)]
+	return getval
+
+
 print("Loading test...")
 
 # load the study JSON into s_OBJ
-# study_JSON = './Studies/aero_scale_factor_s.json'
-study_JSON = './Studies/shift_time_s.json'
+study_JSON = './Studies/3d_zoom.json'
 with open(study_JSON) as data:
   s_OBJ = json.load(data)
 
@@ -33,8 +47,9 @@ vehicle.load(s_OBJ["vehicle"])
 print("Setting up tests...")
 
 # set up track
-track = './DXFs/' + s_OBJ["track"]
-segments = track_segmentation.dxf_to_segments(track, s_OBJ["segment_distance"])
+tracks = s_OBJ["track"]
+meshes = s_OBJ["segment_distance"]
+segList = [track_segmentation.dxf_to_segments("./DXFs/" + tracks[i], meshes[i]) for i in range(len(tracks))]
 
 # # the following lines were lost under the sweeping branch of the new regime
 # tests = np.array(s_OBJ["test_points"])
@@ -42,85 +57,160 @@ segments = track_segmentation.dxf_to_segments(track, s_OBJ["segment_distance"])
 
 # set up tests
 tests = s_OBJ["tests"]
-targets = list(map(lambda x: tests[x]["target"], range(len(tests)))) # blame PLC for this
-operations = list(map(lambda x: tests[x]["operation"], range(len(tests)))) # I'm so sorry
-test_points = list(map(lambda x: tests[x]["test_vals"], range(len(tests)))) # I've forgotten how to do this the normal way
+targets = [tests[x]["target"] for x in range(len(tests))]
+operations = [tests[x]["operation"] for x in range(len(tests))]
+test_points = [tests[x]["test_vals"] for x in range(len(tests))]
 
-# set up some preliminary values
-num_tests = len(test_points[0])
-output = []
-plot_points = np.array(s_OBJ["plot_points"])
-times = np.zeros(num_tests)
+try: # run 2D test
+	tests2 = s_OBJ["tests2"]
+	targets2 = [tests2[x]["target"] for x in range(len(tests2))]
+	operations2 = [tests2[x]["operation"] for x in range(len(tests2))]
+	test_points2 = [tests2[x]["test_vals"] for x in range(len(tests2))]
 
-print("Running tests...")
+	num_xtests = len(test_points[0])
+	num_ytests = len(test_points2[0])
 
-# run the study
-for test_no in range(num_tests):
-	# alter the variables as need be
-	for var_no, var in enumerate(targets):
-		test_op = operations[var_no]
-		test_vals = test_points[var_no]
+	# set up some preliminary values
+	times = np.zeros((len(segList), num_xtests, num_ytests))
 
-		if test_op == "product":
-			vehicle.setVar(var, vehicle.getOriginalVal(var) * test_vals[test_no])
-		elif test_op == "inverse-product":
-			vehicle.setVar(var, vehicle.getOriginalVal(var) / test_vals[test_no])
-		elif test_op == "replace":
-			vehicle.setVar(var, test_vals[test_no])
+	for seg_no in range(len(segList)):
+		print("\tTesting track " + str(seg_no + 1) + "...")
 
-	# solve under the new conditions
-	output.append(steady_solve(vehicle.v, segments))
-	times[test_no] = output[test_no][-1, O_TIME]
+		for test_no in range(num_xtests):
+			print("\t\tTesting parameter row " + str(test_no + 1) + "...")
 
-	print("\tTest " + str(test_no + 1) + " complete!")
-	plot_velocity_and_events(output[test_no], "time")
+			# alter the test variables as need be
+			for var_no, var in enumerate(targets):
+				test_op = operations[var_no]
+				test_vals = test_points[var_no]
 
-print("Plotting results...")
+				if test_op == "product":
+					vehicle.setVar(var, vehicle.getOriginalVal(var) * test_vals[test_no])
+				elif test_op == "inverse-product":
+					vehicle.setVar(var, vehicle.getOriginalVal(var) / test_vals[test_no])
+				elif test_op == "replace":
+					vehicle.setVar(var, test_vals[test_no])
 
-# plot the study
-fig, ax = plt.subplots()
+				# alter the test2 variables as need be
+				for test2_no in range(num_ytests):
+					# alter the variables as need be
+					for var2_no, var2 in enumerate(targets2):
+						test_op2 = operations2[var2_no]
+						test_vals2 = test_points2[var2_no]
 
-plot_style = s_OBJ["plot_style"]
-if plot_style == "basic":
-	ax.plot(plot_points, times, label=s_OBJ["plot_title"], marker='x', linestyle='-')
-elif plot_style == "semilog":
-	ax.semilogx(plot_points, times, label=s_OBJ["plot_title"], marker='x', linestyle='-')
+						if test_op2 == "product":
+							vehicle.setVar(var2, vehicle.getOriginalVal(var2) * test_vals2[test2_no])
+						elif test_op2 == "inverse-product":
+							vehicle.setVar(var2, vehicle.getOriginalVal(var2) / test_vals2[test2_no])
+						elif test_op2 == "replace":
+							vehicle.setVar(var2, test_vals2[test2_no])
 
-ax.grid(True)
-ax.legend()
+					# solve under the new conditions
+					times[seg_no, test_no, test2_no] = steady_solve(vehicle.v, segList[seg_no])[-1, O_TIME]
 
-plt.xlabel(s_OBJ["plot_x_label"])
-plt.ylabel(s_OBJ["plot_y_label"])
+					print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
 
-plt.draw()
+			# plot_velocity_and_events(output[test_no], "time")
 
-print("Done!")
+	# plot the study
+	print("Plotting results...")
 
-plt.show()
+	for seg_no in range(len(segList)):
+		fig, ax = plt.subplots()
 
-# track = './DXFs/ax.dxf'
-# segs = track_segmentation.dxf_to_segments(track, 0.25)
-# possibilities = np.array([0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4])
-# output = []
-# times = np.zeros(len(possibilities))
+		# data setup
+		X1 = np.array(test_points)
+		Y1 = np.array(test_points2)
+		X, Y = np.meshgrid(X1, Y1)
+		Z = np.transpose(times[seg_no])
 
-# for i in range(len(possibilities)):
-# 	vehicle.downforce_35mph=65.0 *math.sqrt(possibilities[i])
-# 	vehicle.drag_35mph=44.0      *math.sqrt(1/possibilities[i])
-# 	output.append(steady_solve(vehicle,segs))
-# 	print('Aero Efficiency: %.2f, took %.3f seconds to travel %.1f feet' % (possibilities[i],output[i][-1,0],output[i][-1,1]) )
-# 	times[i]=output[i][-1,0]
+		# plotting shaded regions
+		CS = plt.contourf(X, Y, Z, 200, cmap="GnBu")
+		cbar = plt.colorbar(CS)
 
-# fig, ax = plt.subplots()
-# print(possibilities,times)
+		# plotting min track time
+		minval = Z.min()
+		itemindex = np.where(Z==minval)
+		ys, xs = itemindex
+		minx = X1[0, xs[0]]
+		miny = Y1[0, ys[0]]
 
-# ax.plot(possibilities,times,label='Track Time',marker='x',linestyle='-')
+		plt.scatter(minx, miny, marker="o", s=20, label="Min Track Time", zorder=10)
 
-# ax.grid(True)
-# ax.legend()
-# #plt.gca().invert_xaxis()
-# plt.xlabel('Wing Efficiency')
-# plt.ylabel('Track Time')
-# plt.draw()
+		# adding labels + legibility
+		plt.legend()
 
-# plt.show()
+		plt.xticks(X1[0])
+		plt.yticks(Y1[0])
+		plt.grid(True)
+
+		plt.title(s_OBJ["plot_title"] + " for " + tracks[seg_no])
+		plt.xlabel(s_OBJ["plot_x_label"])
+		plt.ylabel(s_OBJ["plot_y_label"])
+
+		plt.draw()
+		fig.show()
+
+	print("Done!")
+	plt.show()
+
+except KeyError as e: # run 1D test
+	print("Running tests...")
+
+	# set up some preliminary values
+	num_tests = len(test_points[0])
+	plot_points = np.array(s_OBJ["plot_points"])
+	times = np.zeros((len(segList), num_tests))
+	output = []
+
+	# run 1D study
+	for seg_no in range(len(segList)):
+		print("\tTesting track " + str(seg_no + 1) + "...")
+
+		for test_no in range(num_tests):
+			# alter the variables as need be
+			for var_no, var in enumerate(targets):
+				test_op = operations[var_no]
+				test_vals = test_points[var_no]
+
+				if test_op == "product":
+					vehicle.setVar(var, vehicle.getOriginalVal(var) * test_vals[test_no])
+				elif test_op == "inverse-product":
+					vehicle.setVar(var, vehicle.getOriginalVal(var) / test_vals[test_no])
+				elif test_op == "replace":
+					vehicle.setVar(var, test_vals[test_no])
+
+			# solve under the new conditions
+			output.append(steady_solve(vehicle.v, segList[seg_no]))
+			times[seg_no, test_no] = output[test_no][-1, O_TIME]
+
+			print("\t\tTest " + str(test_no + 1) + " complete!")
+			# plot_velocity_and_events(output[test_no], "time")
+		output = []
+
+	print("Plotting results...")
+
+	# plot the study
+	fig, ax = plt.subplots()
+
+	plot_style = s_OBJ["plot_style"]
+
+	for i, track in enumerate(tracks):
+		title = s_OBJ["plot_title"] + " for " + track + " at mesh size " + str(meshes[i])
+		if plot_style == "basic":
+			ax.plot(plot_points, times[i], label=title, marker='x', linestyle='-')
+		elif plot_style == "semilog":
+			ax.semilogx(plot_points, times[i], label=title, marker='x', linestyle='-')
+
+	ax.grid(True)
+	ax.legend()
+
+	plt.xlabel(s_OBJ["plot_x_label"])
+	plt.ylabel(s_OBJ["plot_y_label"])
+
+	plt.draw()
+
+	print("Done!")
+
+	plt.show()
+

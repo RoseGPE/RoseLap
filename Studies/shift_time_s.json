@@ -1,15 +1,15 @@
 {
 	"vehicle": "basic.json",
-	"track": "loop.dxf",
-	"segment_distance": 0.25,
+	"track": ["loop.DXF", "loop.DXF"],
+	"segment_distance": [0.25, 0.10],
 	"tests": [{
 			"target": "shift_time",
 			"operation": "replace",
-			"test_vals": [0.0, 0.25, 0.5, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 2.0, 2.5]
+			"test_vals": [0.0, 0.25, 0.5, 0.7, 0.8]
 		}],
 	"plot_style": "basic",
 	"plot_title": "Track Time",
 	"plot_x_label": "Shifting time",
 	"plot_y_label": "Track time",
-	"plot_points": [0.0, 0.25, 0.5, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 2.0, 2.5]
+	"plot_points": [0.0, 0.25, 0.5, 0.7, 0.8]
 }

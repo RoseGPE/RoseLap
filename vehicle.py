@@ -67,25 +67,8 @@ def load(filename):
 
   v.v_OBJ = v_OBJ
 
-  # TODO: be smart about this (setattr)
-
 def getOriginalVal(name):
   return v.v_OBJ[name]
 
 def setVar(name, val):
   exec("v." + name + " = " + str(val)) # jank in preparation for even better code structure
-
-
-# mass = (550*2)/g #slug
-
-# downforce_35mph = 60; # lbf
-# drag_35mph = 0 # lbf
-
-# mu = 2.0; #coeff
-# tire_radius = 0.75 #ft
-
-# engine_rpms = [1000.0, 3000.0, 9000.0] #rev/min
-# engine_torque = [36.88*0.9, 36.88*2.0, 36.88*0.8] # ft-lbf
-# engine_reduction = 2.81
-# gears = [2.416, 1.92, 1.562, 1.277, 1.05]
-# final_drive_reduction = 36.0/13.0
