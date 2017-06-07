@@ -1,8 +1,3 @@
-'''
-TO DO:
-solve style param
-'''
-
 from sim import *
 import vehicle
 import track_segmentation
@@ -12,16 +7,12 @@ import json
 Study Schema:
 vehicle: [string] filename for .json in the Vehicles directory
 track: [string] filename for .dxf in the DXFs directory
-segment_distance: [float-array]
+segment_distance: [float]
 tests: [object-array]
 	target: [string] vehicle parameter to alter
 	operation: 'replace' || 'product' || 'inverse-product'
 	test_vals: [float-array]
-tests2: [object-array] (optional)
-	target: [string] vehicle parameter to alter
-	operation: 'replace' || 'product' || 'inverse-product'
-	test_vals: [float-array]
-plot_style: 'semilog' || 'basic' || 'heatmap' || 'bars'
+plot_style: 'semilog' || 'basic'
 plot_title: [string]
 plot_x_label: [string]
 plot_y_label: [string]
@@ -224,3 +215,4 @@ def run(filename):
 			output = []
 
 		return StudyRecord(times, segList, s_OBJ)
+
