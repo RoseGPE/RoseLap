@@ -19,13 +19,9 @@ plot_y_label: [string]
 plot_points: [float-array]
 """
 
-def testPointToMatrixValue():
-	def getval(t, t2):
-		times[test_points.index(t), test_points2.index(t2)]
-	return getval
-
 class StudyRecord:
-	def __init__(self, times, segList, sobj, kind="2D"):
+	def __init__(self, output, times, segList, sobj, kind="2D", ):
+		self.output = output
 		self.times = times
 		self.segList = segList
 		self.sobj = sobj
@@ -37,17 +33,17 @@ class StudyRecord:
 	def plot(self):
 		print("Plotting results...")
 
+		fig, ax = plt.subplots()
+
 		if self.kind == "2D":
 			# plot the study
-			fig, ax = plt.subplots()
-
 			for i, track in enumerate(self.track):
 				title = self.plot_title + " for " + track + " at mesh size " + str(self.segment_distance[i])
 
 				if self.plot_style == "basic":
-					ax.plot(self.plot_points, self.times[i], label=title, marker='x', linestyle='-')
+					ax.plot(self.plot_points, self.times[i], label=title, marker='x', linestyle='-', picker=5)
 				elif self.plot_style == "semilog":
-					ax.semilogx(self.plot_points, self.times[i], label=title, marker='x', linestyle='-')
+					ax.semilogx(self.plot_points, self.times[i], label=title, marker='x', linestyle='-', picker=5)
 
 			ax.grid(True)
 			ax.legend()
@@ -55,15 +51,21 @@ class StudyRecord:
 			plt.xlabel(self.plot_x_label)
 			plt.ylabel(self.plot_y_label)
 
+
+			# interactivity, maybe
+			if len(self.tests) == 1:
+				print("we doin this")
+				details = DetailZoom(self)
+				fig.canvas.mpl_connect('mouse_click_event', details.onpick)
+
 			plt.draw()
+			plt.show()
 
 		elif self.kind == "3D":
 			for seg_no in range(len(self.segList)):
-				fig, ax = plt.subplots()
-
 				# data setup
-				X1 = np.array(self.test_points)
-				Y1 = np.array(self.test_points2)
+				X1 = np.array(self.plot_x_points)
+				Y1 = np.array(self.plot_y_points)
 				X, Y = np.meshgrid(X1, Y1)
 				Z = np.transpose(self.times[seg_no])
 
@@ -75,16 +77,17 @@ class StudyRecord:
 				minval = Z.min()
 				itemindex = np.where(Z==minval)
 				ys, xs = itemindex
-				minx = X1[0, xs[0]]
-				miny = Y1[0, ys[0]]
+				minx = X1[xs[0]]
+				miny = Y1[ys[0]]
 
-				plt.scatter(minx, miny, marker="o", s=20, label="Min Track Time", zorder=10)
+				plt.scatter(X, Y, marker="x", label="Details", picker=20)
+				plt.scatter(minx, miny, marker="o", s=20, label="Min Track Time", zorder=10, picker=5)
 
 				# adding labels + legibility
 				plt.legend()
 
-				plt.xticks(X1[0])
-				plt.yticks(Y1[0])
+				plt.xticks(X1)
+				plt.yticks(Y1)
 				plt.grid(True)
 
 				plt.title(self.plot_title + " for " + self.track[seg_no] + " at mesh size " + str(self.segment_distance[seg_no]))
@@ -93,11 +96,63 @@ class StudyRecord:
 
 				plt.draw()
 				fig.show()
-			else:
-				print("Invalid Study")
+
+				if seg_no != len(self.segList) - 1:
+					fig, ax = plt.subplots()
+				else:
+					plt.show()
+		else:
+			print("Invalid Study")
 
 		print("Done!")
-		plt.show()
+
+class DetailZoom:
+	def __init__(self, record):
+		self.record = record
+		self.outputs = record.output
+
+	def onpick(self, event):
+		print("eyyy")
+		# check if click was even somewhere of interest
+		if event.artist != line:
+			return True
+
+		N = len(event.ind)
+		if not N:
+			return True
+
+		# get mouse data
+		x = event.mouseevent.xdata
+		y = event.mouseevent.ydata
+
+		print(x)
+		print(y)
+
+		# find closest point
+		distances = []
+		if self.record.kind == "2D":
+			distances = np.array([abs(p - x) for p in self.record.plot_points])
+			minXIndex = distances.argmin()
+
+			relevantTimes = np.transpose(self.record.times[0][:, minXIndex])
+			distances = np.array([abs(t - y) for t in relevantTimes])
+			minYIndex = distances.argmin()
+
+			outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
+			self.plotDetail(outputIndex)
+
+		elif self.record.kind == "3D":
+			distances = np.array([abs(p - x) for p in self.record.plot_x_points])
+			minXIndex = distances.argmin()
+
+			distances = np.array([abs(p - y) for p in self.record.plot_y_points])
+			minYIndex = distances.argmin()
+
+			outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
+			self.plotDetail(outputIndex)
+
+	def plotDetail(self, i):
+		plot_velocity_and_events(self.outputs[i])
 
 
 def run(filename):
@@ -127,8 +182,9 @@ def run(filename):
 	targets = [tests[x]["target"] for x in range(len(tests))]
 	operations = [tests[x]["operation"] for x in range(len(tests))]
 	test_points = [tests[x]["test_vals"] for x in range(len(tests))]
+	output = []
 
-	try: # run 2D test
+	try: # run 3D test
 		tests2 = s_OBJ["tests2"]
 		targets2 = [tests2[x]["target"] for x in range(len(tests2))]
 		operations2 = [tests2[x]["operation"] for x in range(len(tests2))]
@@ -173,21 +229,21 @@ def run(filename):
 								vehicle.setVar(var2, test_vals2[test2_no])
 
 						# solve under the new conditions
-						times[seg_no, test_no, test2_no] = steady_solve(vehicle.v, segList[seg_no])[-1, O_TIME]
+						output.append(steady_solve(vehicle.v, segList[seg_no]))
+						times[seg_no, test_no, test2_no] = output[-1][-1, O_TIME]
 
 						print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
 
 		print("Done!")
-		return StudyRecord(times, segList, s_OBJ, "3D")
+		return StudyRecord(output, times, segList, s_OBJ, "3D")
 
-	except KeyError as e: # run 1D test
+	except KeyError as e: # run 2D test
 		print("Running tests...")
 
 		# set up some preliminary values
 		num_tests = len(test_points[0])
 		plot_points = np.array(s_OBJ["plot_points"])
 		times = np.zeros((len(segList), num_tests))
-		output = []
 
 		# run 1D study
 		for seg_no in range(len(segList)):
@@ -208,11 +264,10 @@ def run(filename):
 
 				# solve under the new conditions
 				output.append(steady_solve(vehicle.v, segList[seg_no]))
-				times[seg_no, test_no] = output[test_no][-1, O_TIME]
+				times[seg_no, test_no] = output[-1][-1, O_TIME]
 
 				print("\t\tTest " + str(test_no + 1) + " complete!")
 				# plot_velocity_and_events(output[test_no], "time")
-			output = []
 
-		return StudyRecord(times, segList, s_OBJ)
+		return StudyRecord(output, times, segList, s_OBJ)
 
