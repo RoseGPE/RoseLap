@@ -8,6 +8,6 @@ Tracks
 - Ellipses and splines, etc.
 
 Analysis (Studies)
-- Would like to show the effect of parameters on multiple tracks per plot
-- 3D studies
 - Not sure if varying engine curves is doable yet?
+- Move over to YAML
+- Find a way to look at individual plots
