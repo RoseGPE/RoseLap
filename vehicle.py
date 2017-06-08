@@ -47,6 +47,8 @@ class Vehicle(object):
 
   def best_gear(self, v):
     opts = [self.eng_force(v, int(gear)) for gear in range(len(self.gears))]
+    if 0 in opts:
+      return len(opts)-1
     return np.argmax(opts)
 
   def __init__(self):
