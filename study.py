@@ -1,9 +1,7 @@
 from sim import *
 import vehicle
 import track_segmentation
-#import fancyyaml as yaml
-import json as yaml
-
+import fancyyaml as yaml
 """
 Study Schema:
 vehicle: [string] filename for .json in the Vehicles directory
