@@ -1,6 +1,4 @@
 from sim import *
-import vehicle
-import track_segmentation
 import study
 
 # vehicle.load("basic.json")
@@ -13,8 +11,11 @@ import study
 # plot_velocity_and_events(output)
 # plt.show()
 
-aero = study.run("aero_efficiency_s.json")
-fdr = study.run("fdr_s.json")
+# esf = study.run("esf.json")
+# esf.plot()
 
-aero.plot()
-fdr.plot()
+esf3D = study.run("esf3D.yaml")
+esf3D.plot()
+
+# TODO:
+	# Solve style
