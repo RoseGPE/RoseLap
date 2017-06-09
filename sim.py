@@ -269,7 +269,7 @@ def solve(vehicle, segments, output_0 = None):
 
       
 
-  np.savetxt('dump.csv', output, delimiter=",")
+  #np.savetxt('dump.csv', output, delimiter=",")
   return output
 
 def steady_solve(vehicle,segments):
