@@ -11,10 +11,11 @@ import study
 # plot_velocity_and_events(output)
 # plt.show()
 
-study.run("esf.yaml").plot()
+# esf = study.run("esf.json")
+# esf.plot()
 
-# aero = study.run("aero_efficiency_s.json")
-# fdr = study.run("fdr_s.json)"
+esf3D = study.run("esf3D.yaml")
+esf3D.plot()
 
-# aero.plot()
-# fdr.plot()
+# TODO:
+	# Solve style

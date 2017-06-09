@@ -1,7 +1,7 @@
 {
 	"vehicle": "aero_test_v.json",
-	"track": "ax.dxf",
-	"segment_distance": 0.25,
+	"track": ["ax.dxf"],
+	"segment_distance": [0.25],
 	"tests": [{
 			"target": "downforce_35mph",
 			"operation": "product",
