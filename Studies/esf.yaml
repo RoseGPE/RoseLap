@@ -2,9 +2,9 @@ vehicle: basic.yaml
 track: [acceleration.dxf]
 segment_distance: [0.3]
 tests:
-  target: shift_extra_factor
-  operation: replace
-  test_vals: [0, 0.025, 0.05, 0.075, 0.1, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+  - target: shift_extra_factor
+    operation: replace
+    test_vals: [0, 0.025, 0.05, 0.075, 0.1, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
 plot_style: basic
 plot_title: Track Time
 plot_x_label: Extra Shift Factor
