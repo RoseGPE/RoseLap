@@ -283,8 +283,9 @@ def colorgen(num_colors, idx):
     return scalar_map.to_rgba(index)
   return map_index_to_rgb_color(idx)
 
-def plot_velocity_and_events(output, axis='x'):
+def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   fig, ax = plt.subplots(2, sharex=True)
+  fig.canvas.set_window_title(title)
 
   t = output[:, O_TIME]
   x = output[:, O_DISTANCE]

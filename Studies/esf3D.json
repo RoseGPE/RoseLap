@@ -1,7 +1,7 @@
 {
 	"vehicle": "basic.json",
-	"track": ["accel.dxf", "accel.DXF"],
-	"segment_distance": [0.2, 0.4],
+	"track": ["accel.dxf"],
+	"segment_distance": [0.2],
 	"tests": [{
 			"target": "shift_extra_factor",
 			"operation": "replace",

@@ -36,6 +36,8 @@ class StudyRecord:
 		fig, ax = plt.subplots()
 
 		if self.kind == "2D":
+			fig.canvas.set_window_title('Study Results')
+
 			# plot the study
 			for i, track in enumerate(self.track):
 				title = self.plot_title + " for " + track + " at mesh size " + str(self.segment_distance[i])
@@ -56,12 +58,14 @@ class StudyRecord:
 			if len(self.tests) == 1:
 				print("we doin this")
 				details = DetailZoom(self)
-				fig.canvas.mpl_connect('mouse_click_event', details.onpick)
+				fig.canvas.mpl_connect('button_press_event', details.onpick)
 
 			plt.draw()
 			plt.show()
 
 		elif self.kind == "3D":
+			fig.canvas.set_window_title('3D Study Results')
+
 			for seg_no in range(len(self.segList)):
 				# data setup
 				X1 = np.array(self.plot_x_points)
@@ -94,11 +98,18 @@ class StudyRecord:
 				plt.xlabel(self.plot_x_label)
 				plt.ylabel(self.plot_y_label)
 
+				# interactivity, maybe
+				if len(self.tests) == 1:
+					print("we doin this")
+					details = DetailZoom(self)
+					fig.canvas.mpl_connect('button_press_event', details.onpick)
+
 				plt.draw()
 				fig.show()
 
 				if seg_no != len(self.segList) - 1:
 					fig, ax = plt.subplots()
+					fig.canvas.set_window_title('3D Study Results')
 				else:
 					plt.show()
 		else:
@@ -112,31 +123,23 @@ class DetailZoom:
 		self.outputs = record.output
 
 	def onpick(self, event):
-		print("eyyy")
-		# check if click was even somewhere of interest
-		if event.artist != line:
-			return True
-
-		N = len(event.ind)
-		if not N:
-			return True
-
 		# get mouse data
-		x = event.mouseevent.xdata
-		y = event.mouseevent.ydata
-
-		print(x)
-		print(y)
+		x = event.xdata
+		y = event.ydata
 
 		# find closest point
 		distances = []
 		if self.record.kind == "2D":
 			distances = np.array([abs(p - x) for p in self.record.plot_points])
 			minXIndex = distances.argmin()
+			if distances[minXIndex] > 0.1:
+				return
 
-			relevantTimes = np.transpose(self.record.times[0][:, minXIndex])
+			relevantTimes = np.transpose(self.record.times[:, minXIndex])
 			distances = np.array([abs(t - y) for t in relevantTimes])
 			minYIndex = distances.argmin()
+			if distances[minYIndex] > 0.1:
+				return
 
 			outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
 			self.plotDetail(outputIndex)
@@ -144,15 +147,21 @@ class DetailZoom:
 		elif self.record.kind == "3D":
 			distances = np.array([abs(p - x) for p in self.record.plot_x_points])
 			minXIndex = distances.argmin()
+			if distances[minXIndex] > 0.1:
+				return
 
 			distances = np.array([abs(p - y) for p in self.record.plot_y_points])
 			minYIndex = distances.argmin()
+			if distances[minYIndex] > 0.1:
+				return
 
-			outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
-			self.plotDetail(outputIndex)
+			outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex
+			title = 'Details for ' + str(self.record.plot_x_points[minXIndex]) + ' ' + self.record.plot_x_label + ' and ' + str(self.record.plot_y_points[minYIndex]) + ' ' + self.record.plot_y_label
+			self.plotDetail(outputIndex, title)
 
-	def plotDetail(self, i):
-		plot_velocity_and_events(self.outputs[i])
+	def plotDetail(self, i, title='Details'):
+		plot_velocity_and_events(self.outputs[i], title=title)
+		plt.show()
 
 
 def run(filename):
@@ -229,7 +238,7 @@ def run(filename):
 								vehicle.setVar(var2, test_vals2[test2_no])
 
 						# solve under the new conditions
-						output.append(steady_solve(vehicle.v, segList[seg_no]))
+						output.append(solve(vehicle.v, segList[seg_no]))
 						times[seg_no, test_no, test2_no] = output[-1][-1, O_TIME]
 
 						print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")

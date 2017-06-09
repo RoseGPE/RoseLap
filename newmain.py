@@ -11,11 +11,11 @@ import study
 # plot_velocity_and_events(output)
 # plt.show()
 
-esf = study.run("esf.json")
-esf.plot()
+# esf = study.run("esf.json")
+# esf.plot()
 
-# esf3D = study.run("esf3D.json")
-# esf3D.plot()
+esf3D = study.run("esf3D.json")
+esf3D.plot()
 
 # TODO:
-	# FIND RIGHT MOUSE EVENT AND FIX INTERACTIVITY
+	# Solve style
