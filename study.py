@@ -237,7 +237,11 @@ def run(filename):
 								vehicle.setVar(var2, test_vals2[test2_no])
 
 						# solve under the new conditions
-						output.append(solve(vehicle.v, segList[seg_no]))
+						if s_OBJ["steady_state"][seg_no] == True:
+							output.append(steady_solve(vehicle.v, segList[seg_no]))
+						else:
+							output.append(solve(vehicle.v, segList[seg_no]))
+						
 						times[seg_no, test_no, test2_no] = output[-1][-1, O_TIME]
 
 						print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
@@ -271,7 +275,10 @@ def run(filename):
 						vehicle.setVar(var, test_vals[test_no])
 
 				# solve under the new conditions
-				output.append(steady_solve(vehicle.v, segList[seg_no]))
+				if s_OBJ["steady_state"][seg_no] == True:
+					output.append(steady_solve(vehicle.v, segList[seg_no]))
+				else:
+					output.append(solve(vehicle.v, segList[seg_no]))
 				times[seg_no, test_no] = output[-1][-1, O_TIME]
 
 				print("\t\tTest " + str(test_no + 1) + " complete!")

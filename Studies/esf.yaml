@@ -1,6 +1,7 @@
 vehicle: basic.yaml
 track: [acceleration.dxf]
 segment_distance: [0.3]
+steady_state: [no]
 tests:
   - target: shift_extra_factor
     operation: replace
