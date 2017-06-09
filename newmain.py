@@ -14,7 +14,7 @@ import study
 # esf = study.run("esf.json")
 # esf.plot()
 
-esf3D = study.run("esf3D.json")
+esf3D = study.run("esf3D.yaml")
 esf3D.plot()
 
 # TODO:

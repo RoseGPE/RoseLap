@@ -1,8 +1,7 @@
 from sim import *
 import vehicle
 import track_segmentation
-import json
-
+import fancyyaml as yaml
 """
 Study Schema:
 vehicle: [string] filename for .json in the Vehicles directory
@@ -167,10 +166,10 @@ class DetailZoom:
 def run(filename):
 	print("Loading test...")
 
-	# load the study JSON into s_OBJ
-	study_JSON = './Studies/' + filename
-	with open(study_JSON) as data:
-	  s_OBJ = json.load(data)
+	# load the study YAML into s_OBJ
+	study_YAML = './Studies/' + filename
+	with open(study_YAML) as data:
+	  s_OBJ = yaml.load(data)
 
 	# load vehicle
 	vehicle.load(s_OBJ["vehicle"])

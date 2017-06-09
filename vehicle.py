@@ -1,4 +1,4 @@
-import json
+import fancyyaml as yaml
 import numpy as np
 
 """
@@ -47,6 +47,8 @@ class Vehicle(object):
 
   def best_gear(self, v):
     opts = [self.eng_force(v, int(gear)) for gear in range(len(self.gears))]
+    if 0 in opts:
+      return len(opts)-1
     return np.argmax(opts)
 
   def __init__(self):
@@ -56,11 +58,13 @@ v = Vehicle()
 g = 32.2 # ft/s^2
 
 def load(filename):
-  vehicle_JSON = './Vehicles/' + filename
-  with open(vehicle_JSON) as data:
-    v_OBJ = json.load(data)
+  vehicle_YAML = './Vehicles/' + filename
+  with open(vehicle_YAML) as data:
+    v_OBJ = yaml.load(data)
 
   for key in v_OBJ:
+    if isinstance(v_OBJ[key], int):
+      v_OBJ[key] = float(v_OBJ[key])
     setattr(v, key, v_OBJ[key])
   v.mass /= g
   v.g = g
