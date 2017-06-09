@@ -21,7 +21,10 @@ O_STATUS = 6
 O_GEAR = 7
 O_LONG_ACC = 8
 O_LAT_ACC = 9
+O_FR_REMAINING = 11
+O_FF_REMAINING = 10
 O_CURVATURE = 12
+O_ENG_RPM = 13
 
 # Shifting status codes
 IN_PROGRESS = 0
@@ -58,7 +61,7 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
   Fr_remaining = np.sqrt(Fr_lim**2 - Fr_lat**2)
 
-  Fr_engine_limit = vehicle.eng_force(v0, int(gear))
+  Fr_engine_limit,eng_rpm = vehicle.eng_force(v0, int(gear))
 
   Ff_remaining = np.sqrt(Ff_lim**2 - Ff_lat**2)
 
@@ -100,7 +103,7 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
   if abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
     status = S_DRAG_LIM
-  if abs(Fr_engine_limit) < 1e-3 :
+  if eng_rpm > vehicle.engine_rpms[-1]:
     status = S_TOPPED_OUT
 
   Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
@@ -174,25 +177,26 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     (v0 ** 2) * segment.curvature / vehicle.g, 
     Ff_remaining, 
     Fr_remaining, 
-    segment.curvature
+    segment.curvature,
+    eng_rpm
   ])
 
   return output
 
 def solve(vehicle, segments, output_0 = None):
   # set up initial stuctures
-  output = np.zeros((len(segments), 13))
+  output = np.zeros((len(segments), 14))
   shifting = NOT_SHIFTING
   
   if output_0 is None:
     output[0,3] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g
     output[0,4] = vehicle.mass*vehicle.weight_bias*vehicle.g
-    gear = vehicle.best_gear(output[0,O_VELOCITY])
+    gear = vehicle.best_gear(output[0,O_VELOCITY], np.inf)
   else:
     output[0,:] = output_0
     output[0,0] = 0
     output[0,1] = 0
-    gear = vehicle.best_gear(output_0[O_VELOCITY])
+    gear = vehicle.best_gear(output_0[O_VELOCITY], output_0[O_FR_REMAINING])
 
   brake = False
   shiftpt = -1
@@ -212,7 +216,7 @@ def solve(vehicle, segments, output_0 = None):
       print('damnit bobby')
       return None
     if (gear is None) and shiftpt < 0:
-      gear = vehicle.best_gear(output[i-1,O_VELOCITY])
+      gear = vehicle.best_gear(output[i-1,O_VELOCITY], output[i,O_FR_REMAINING])
 
     step_result = step(vehicle,output[i-1,:], segments[i], (segments[i+1] if i+1<len(segments) else segments[i]), brake, shiftpt>=0, gear)
     if step_result is None:
@@ -249,11 +253,16 @@ def solve(vehicle, segments, output_0 = None):
 
       output[i] = step_result
 
-      better_gear = vehicle.best_gear(output[i,O_VELOCITY]*(1-vehicle.shift_extra_factor))
+      better_gear = vehicle.best_gear(output[i,O_VELOCITY]*(1), output[i,O_FR_REMAINING])
 
-      if output[i,O_STATUS]==S_ENG_LIM_ACC and shiftpt < 0 and gear != better_gear and output[i,O_VELOCITY]>shift_v_req:
-        
+      if shiftpt < 0 and gear != better_gear and output[i,O_STATUS]==S_ENG_LIM_ACC and output[i,O_VELOCITY]>shift_v_req:
+        print(better_gear)
         gear += int((better_gear-gear)/abs(better_gear-gear))
+        shiftpt = i
+        shift_v_req = output[i,O_VELOCITY]*1.01
+      elif shiftpt < 0 and output[i,O_STATUS]==S_TOPPED_OUT and gear<len(vehicle.gears)-1:
+        print('topped, shifting')
+        gear += 1
         shiftpt = i
         shift_v_req = output[i,O_VELOCITY]*1.01
 

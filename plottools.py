@@ -19,6 +19,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
 
   along = output[:, sim.O_LONG_ACC]
   alat = output[:, sim.O_LAT_ACC]
+  eng_rpm = output[:, sim.O_ENG_RPM]
 
   curv = output[:, sim.O_CURVATURE]*100
 
@@ -34,6 +35,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   ax[1].plot(xaxis,along,lw=4,label='Longitudinal g\'s')
   ax[1].plot(xaxis,alat,lw=4,label='Lateral g\'s')
   ax[1].plot(xaxis,gear,lw=4,label='Gear')
+  ax[1].plot(xaxis,eng_rpm/1000, lw=4, label='RPM x1000')
 
   lim = max(v)
   alpha =  1
@@ -53,7 +55,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
       sector=sec
   ax[0].set_ylim((0,lim+1))
   #ax[1].set_ylim((min((min(along),min(alat)))-0.1,0.1+max((max(along),max(alat)))))
-  ax[1].set_ylim(-5,5)
+  ax[1].set_ylim(-5,12)
   plt.xlim((0,max(xaxis)))
 
   #sectors = set(output[:,3])
