@@ -1,4 +1,5 @@
 from sim import *
+from plottools import *
 import vehicle
 import track_segmentation
 import fancyyaml as yaml
@@ -115,53 +116,6 @@ class StudyRecord:
 			print("Invalid Study")
 
 		print("Done!")
-
-class DetailZoom:
-	def __init__(self, record):
-		self.record = record
-		self.outputs = record.output
-
-	def onpick(self, event):
-		# get mouse data
-		x = event.xdata
-		y = event.ydata
-
-		# find closest point
-		distances = []
-		if self.record.kind == "2D":
-			distances = np.array([abs(p - x) for p in self.record.plot_points])
-			minXIndex = distances.argmin()
-			if distances[minXIndex] > 0.1:
-				return
-
-			relevantTimes = np.transpose(self.record.times[:, minXIndex])
-			distances = np.array([abs(t - y) for t in relevantTimes])
-			minYIndex = distances.argmin()
-			if distances[minYIndex] > 0.1:
-				return
-
-			outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
-			self.plotDetail(outputIndex)
-
-		elif self.record.kind == "3D":
-			distances = np.array([abs(p - x) for p in self.record.plot_x_points])
-			minXIndex = distances.argmin()
-			if distances[minXIndex] > 0.1:
-				return
-
-			distances = np.array([abs(p - y) for p in self.record.plot_y_points])
-			minYIndex = distances.argmin()
-			if distances[minYIndex] > 0.1:
-				return
-
-			outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex
-			title = 'Details for ' + str(self.record.plot_x_points[minXIndex]) + ' ' + self.record.plot_x_label + ' and ' + str(self.record.plot_y_points[minYIndex]) + ' ' + self.record.plot_y_label
-			self.plotDetail(outputIndex, title)
-
-	def plotDetail(self, i, title='Details'):
-		plot_velocity_and_events(self.outputs[i], title=title)
-		plt.show()
-
 
 def run(filename):
 	print("Loading test...")
