@@ -40,7 +40,7 @@ class StudyRecord:
 
 			# plot the study
 			for i, track in enumerate(self.track):
-				title = self.plot_title + " for " + track + " at mesh size " + str(self.segment_distance[i])
+				title = self.track[i] + " (mesh size: " + str(self.segment_distance[i]) + ")" 
 
 				if self.plot_style == "basic":
 					ax.plot(self.plot_points, self.times[i], label=title, marker='x', linestyle='-', picker=5)
@@ -50,6 +50,7 @@ class StudyRecord:
 			ax.grid(True)
 			ax.legend()
 
+			plt.title(self.plot_title)
 			plt.xlabel(self.plot_x_label)
 			plt.ylabel(self.plot_y_label)
 
@@ -94,7 +95,7 @@ class StudyRecord:
 				plt.yticks(Y1)
 				plt.grid(True)
 
-				plt.title(self.plot_title + " for " + self.track[seg_no] + " at mesh size " + str(self.segment_distance[seg_no]))
+				plt.title(self.plot_title + " on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
 				plt.xlabel(self.plot_x_label)
 				plt.ylabel(self.plot_y_label)
 

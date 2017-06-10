@@ -9,8 +9,8 @@ tests:
 - target: final_drive_reduction
   operation: replace
   test_vals:
-    range_start: 1.5
-    range_end: 3.5
+    range_start: 2.25
+    range_end: 3.25
     range_step: 0.03
 plot_style: basic
 plot_title: Track Time

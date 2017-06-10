@@ -9,6 +9,8 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   fig, ax = plt.subplots(2, sharex=True)
   fig.canvas.set_window_title(title)
 
+  fig.suptitle(title)
+
   t = output[:, sim.O_TIME]
   x = output[:, sim.O_DISTANCE]
   v = output[:, sim.O_VELOCITY]
@@ -95,7 +97,7 @@ class DetailZoom:
         return
 
       outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
-      title = 'Details for ' + str(self.record.plot_points[minXIndex]) + ' ' + self.record.plot_x_label
+      title = 'Details for ' + self.record.plot_x_label + ': ' + str(self.record.plot_points[minXIndex])
       self.plotDetail(outputIndex, title)
 
     elif self.record.kind == "3D":
@@ -110,7 +112,7 @@ class DetailZoom:
         return
 
       outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex
-      title = 'Details for ' + str(self.record.plot_x_points[minXIndex]) + ' ' + self.record.plot_x_label + ' and ' + str(self.record.plot_y_points[minYIndex]) + ' ' + self.record.plot_y_label
+      title = 'Details for ' + self.record.plot_x_label + ": " + str(self.record.plot_x_points[minXIndex]) + ', ' +  self.record.plot_y_label + ": " + str(self.record.plot_y_points[minYIndex])
       self.plotDetail(outputIndex, title)
 
   def plotDetail(self, i, title='Details'):
