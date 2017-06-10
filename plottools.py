@@ -95,7 +95,8 @@ class DetailZoom:
         return
 
       outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
-      self.plotDetail(outputIndex)
+      title = 'Details for ' + str(self.record.plot_points[minXIndex]) + ' ' + self.record.plot_x_label
+      self.plotDetail(outputIndex, title)
 
     elif self.record.kind == "3D":
       distances = np.array([abs(p - x) for p in self.record.plot_x_points])

@@ -17,5 +17,9 @@ import study
 esf3D = study.run("test.yaml")
 esf3D.plot()
 
-# TODO:
-	# Solve style
+'''
+better detail plot titles
+data toggle
+optional plot points
+
+'''

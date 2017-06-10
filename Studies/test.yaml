@@ -1,26 +1,19 @@
 vehicle: basic.yaml
 track:
-- NE_autocross_2015.dxf
+- acceleration.dxf
 segment_distance:
 - 0.2
 steady_state:
 - no
 tests:
-- target: final_drive_ratio
+- target: final_drive_reduction
   operation: replace
   test_vals:
-  - 2.923
-  - 2.8
-  - 2.5
-  - 2.2
-  - 2.0
+    range_start: 1.5
+    range_end: 3.5
+    range_step: 0.03
 plot_style: basic
 plot_title: Track Time
 plot_x_label: Final Drive Ratio
 plot_y_label: Track Time
-plot_points:
-  - 2.923
-  - 2.8
-  - 2.5
-  - 2.2
-  - 2.0
+#plot_points: Null
