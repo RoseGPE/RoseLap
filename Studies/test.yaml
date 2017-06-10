@@ -10,9 +10,17 @@ tests:
   operation: replace
   test_vals:
   - 2.923
+  - 2.8
+  - 2.5
+  - 2.2
+  - 2.0
 plot_style: basic
 plot_title: Track Time
 plot_x_label: Final Drive Ratio
 plot_y_label: Track Time
 plot_points:
   - 2.923
+  - 2.8
+  - 2.5
+  - 2.2
+  - 2.0

@@ -46,7 +46,7 @@ class Vehicle(object):
           return (torque * v.engine_reduction * gear_ratio * v.final_drive_reduction / v.tire_radius, crank_rpm)
 
   def best_gear(self, v, fr_limit):
-    opts = [min(self.eng_force(v, int(gear))[0], fr_limit) for gear in range(len(self.gears))]
+    opts = [self.eng_force(v, int(gear))[0] for gear in range(len(self.gears))]
     best = 0
     besti = -1
     for i in range(len(opts)):

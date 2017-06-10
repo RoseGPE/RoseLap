@@ -154,9 +154,21 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     Fr_lim = (vehicle.mu*Nr)
     Ff_lim = (vehicle.mu*Nf)
 
+    # back calculate outputs
+    if not (brake or shifting):
+      Fr_long = a_long*vehicle.mass+Fdrag
+      status = S_TIRE_LIM_ACC
+    elif brake:
+      F_brake = -a_long*vehicle.mass-Fdrag
+      Fr_long = -F_brake*vehicle.rear_brake_bias()
+      Ff_long = -F_brake*vehicle.front_brake_bias()
+
+
     n+=1
     if n > nmax:
       return None
+
+
 
   try:
     tf = t0 + segment.length/((v0+vf)/2)
