@@ -186,6 +186,7 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 def solve(vehicle, segments, output_0 = None):
   # set up initial stuctures
   output = np.zeros((len(segments), 14))
+  precrash_output = np.zeros((len(segments), 14))
   shifting = NOT_SHIFTING
   
   if output_0 is None:
@@ -208,9 +209,13 @@ def solve(vehicle, segments, output_0 = None):
 
   # step loop set up
   i = 1
-  
+  backup_amount = int(7.0/segments[0].length)
+  bounds_found = False
   failpt = -1
-  lastsafept = -1
+  middle_brake_bound = -1
+  lower_brake_bound = -1
+  upper_brake_bound = -1
+
   while i<len(segments):
     if i<0:
       print('damnit bobby')
@@ -220,22 +225,39 @@ def solve(vehicle, segments, output_0 = None):
 
     step_result = step(vehicle,output[i-1,:], segments[i], (segments[i+1] if i+1<len(segments) else segments[i]), brake, shiftpt>=0, gear)
     if step_result is None:
+      #print('crash at',i)
       if not brake:
         # Start braking
+
+        #print('crash algo start at', i)
+        precrash_output = np.copy(output)
         brake = True
+        bounds_found = False
         failpt = i
-        lastsafept = i-1
-        i = lastsafept
+        lower_brake_bound = i
+        i = lower_brake_bound
         #plot_velocity_and_events(output)
         #plt.show()
+      elif bounds_found:
+        upper_brake_bound = middle_brake_bound
+
+        middle_brake_bound = (upper_brake_bound+lower_brake_bound)/2
+        #print('bisect down', lower_brake_bound, middle_brake_bound, upper_brake_bound)
+        
+        i = middle_brake_bound
+        output = np.copy(precrash_output)
       else:
         # Try again from an earlier point
-        lastsafept-=1
-        i=lastsafept
+        
+        lower_brake_bound-=backup_amount
+        #print('push further', lower_brake_bound)
+
+        i = lower_brake_bound
+        output = np.copy(precrash_output)
       # reset shifting params
       gear = None
       shiftpt = -1
-    elif i<failpt:
+    elif i<=failpt:
       output[i] = step_result
       i+=1
       brake = True
@@ -243,25 +265,43 @@ def solve(vehicle, segments, output_0 = None):
       gear = None
       shiftpt = -1
       shift_v_req = 0
+    elif failpt>=0 and not bounds_found:
+      #print('nailed it', lower_brake_bound)
+      bounds_found = True
+
+      upper_brake_bound = failpt-1 #lower_brake_bound+backup_amount
+
+      middle_brake_bound = (upper_brake_bound+lower_brake_bound)/2
+      
+      i = middle_brake_bound
+      output = np.copy(precrash_output)
+    elif failpt>=0 and bounds_found and abs(lower_brake_bound - upper_brake_bound) > 1:
+      lower_brake_bound = middle_brake_bound
+
+      middle_brake_bound = (upper_brake_bound+lower_brake_bound)/2
+      #print('bisect up', lower_brake_bound, middle_brake_bound, upper_brake_bound)
+      
+      i = middle_brake_bound
+      output = np.copy(precrash_output)
     else:
       # normal operation
 
       # quit braking
       brake = False # problematic??
       failpt = -1
-      lastsafept = -1
+      lower_brake_bound = -1
+      upper_brake_bound = -1
+      bounds_found = False
 
       output[i] = step_result
 
-      better_gear = vehicle.best_gear(output[i,O_VELOCITY]*(1), output[i,O_FR_REMAINING])
+      better_gear = vehicle.best_gear(output[i,O_VELOCITY], output[i,O_FR_REMAINING])
 
       if shiftpt < 0 and gear != better_gear and output[i,O_STATUS]==S_ENG_LIM_ACC and output[i,O_VELOCITY]>shift_v_req:
-        print(better_gear)
         gear += int((better_gear-gear)/abs(better_gear-gear))
         shiftpt = i
         shift_v_req = output[i,O_VELOCITY]*1.01
       elif shiftpt < 0 and output[i,O_STATUS]==S_TOPPED_OUT and gear<len(vehicle.gears)-1:
-        print('topped, shifting')
         gear += 1
         shiftpt = i
         shift_v_req = output[i,O_VELOCITY]*1.01
@@ -293,9 +333,9 @@ if __name__ == '__main__':
   import track_segmentation
   import plottools
 
-  vehicle.load("basic.json")
+  vehicle.load("basic.yaml")
 
-  track = './DXFs/accel.dxf'
+  track = './DXFs/ne_autocross_2015.dxf'
   segments = track_segmentation.dxf_to_segments(track, 0.1)
 
   #track_segmentation.plot_segments(segments)
@@ -304,4 +344,4 @@ if __name__ == '__main__':
 
   plottools.plot_velocity_and_events(output)
 
-  plt.show()
+  plottools.plt.show()

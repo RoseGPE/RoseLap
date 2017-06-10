@@ -1,14 +1,18 @@
-# test.yaml
-
 vehicle: basic.yaml
-track: [acceleration.dxf]
-segment_distance: [0.1]
+track:
+- NE_autocross_2015.dxf
+segment_distance:
+- 0.2
+steady_state:
+- no
 tests:
-  target: shift_time
+- target: final_drive_ratio
   operation: replace
-  test_vals: [0.2, 1, 2]
+  test_vals:
+  - 2.923
 plot_style: basic
 plot_title: Track Time
-plot_x_label: Shifting time
-plot_y_label: Track time
-plot_points: [0.2, 1, 2.0]
+plot_x_label: Final Drive Ratio
+plot_y_label: Track Time
+plot_points:
+  - 2.923
