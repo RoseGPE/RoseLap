@@ -13,3 +13,10 @@ import study
 
 esf3D = study.run("esf3D.yaml")
 esf3D.plot()
+
+'''
+better detail plot titles
+data toggle
+optional plot points
+
+'''
