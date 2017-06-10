@@ -11,11 +11,5 @@ import study
 # plot_velocity_and_events(output)
 # plt.show()
 
-# esf = study.run("esf.json")
-# esf.plot()
-
 esf3D = study.run("esf3D.yaml")
 esf3D.plot()
-
-# TODO:
-	# Solve style
