@@ -14,8 +14,12 @@ import study
 # esf = study.run("esf.json")
 # esf.plot()
 
-esf3D = study.run("esf3D.yaml")
+esf3D = study.run("esf3d.yaml")
 esf3D.plot()
 
-# TODO:
-	# Solve style
+'''
+better detail plot titles
+data toggle
+optional plot points
+
+'''

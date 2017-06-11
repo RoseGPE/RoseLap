@@ -6,32 +6,20 @@ segment_distance:
 steady_state:
 - no
 tests:
-- target: shift_extra_factor
+- target: final_drive_reduction
   operation: replace
   test_vals:
-  - 0
-  - 0.1
-  - 0.2
-  - 0.3
+    range_start: 2.25
+    range_end: 3.25
+    range_step: 0.2
 tests2:
 - target: shift_time
   operation: replace
   test_vals:
-  - 0
-  - 0.1
-  - 0.2
-  - 0.3
+    range_start: 0.02
+    range_end: 0.2
+    range_step: 0.015
 plot_style: basic
 plot_title: Track Time
-plot_x_label: Extra Shift Factor
+plot_x_label: Final Drive Ratio
 plot_y_label: Shift Time
-plot_x_points:
-- 0
-- 0.1
-- 0.2
-- 0.3
-plot_y_points:
-- 0
-- 0.1
-- 0.2
-- 0.3

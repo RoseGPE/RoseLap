@@ -53,6 +53,7 @@ def load_dxf(path_to_file):
     connectivity = []
     #[print(x) for x in dxf_output]
 
+    first_time = True
     hop = [0,0];
     if len(dxf_output) == 1:
       connectivity = [0]
@@ -71,6 +72,25 @@ def load_dxf(path_to_file):
             matches_pos.append(i)
           elif abs(shape[-2] - hop[0]) < epsilon and abs(shape[-1] - hop[1]) < epsilon:
             matches_neg.append(i)
+        if first_time:
+          fine = False
+          for mp in matches_pos:
+            if dxf_output[mp][-2] > dxf_output[mp][-1]:
+              connectivity.append(mp)
+              hp = dxf_output[mp][-2:]
+              fine = True
+          for mn in matches_neg:
+            if dxf_output[mn][-4] > dxf_output[mn][-3]:
+              connectivity.append(mn)
+              temp = dxf_output[mn][-2:]
+              dxf_output[mn][-2:] = dxf_output[mn][-4:-2]
+              dxf_output[mn][-4:-2] = temp
+              if dxf_output[mn][0] == 'arc':
+                dxf_output[mn][6]*=-1;
+              hop = dxf_output[mn][-2:]
+              fine = True
+          if fine:
+            continue
         if len(matches_pos) > 0:
           connectivity.append(matches_pos[0])
           hop = dxf_output[matches_pos[0]][-2:]
@@ -83,6 +103,7 @@ def load_dxf(path_to_file):
           if (dxf_output[matches_neg[0]][0] == 'arc'):
             dxf_output[matches_neg[0]][6]*=-1;
           hop = dxf_output[matches_neg[0]][-2:]
+        first_time = False
     open_ended = False
     if ( (abs(dxf_output[connectivity[-1]][-4] - dxf_output[connectivity[0]][-2]) > epsilon or abs(dxf_output[connectivity[-1]][-3] - dxf_output[connectivity[0]][-1]) > epsilon)
       and (abs(dxf_output[connectivity[-1]][-2] - dxf_output[connectivity[0]][-4]) > epsilon or abs(dxf_output[connectivity[-1]][-1] - dxf_output[connectivity[0]][-3]) > epsilon)) :

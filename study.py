@@ -40,7 +40,7 @@ class StudyRecord:
 
 			# plot the study
 			for i, track in enumerate(self.track):
-				title = self.plot_title + " for " + track + " at mesh size " + str(self.segment_distance[i])
+				title = self.track[i] + " (mesh size: " + str(self.segment_distance[i]) + ")" 
 
 				if self.plot_style == "basic":
 					ax.plot(self.plot_points, self.times[i], label=title, marker='x', linestyle='-', picker=5)
@@ -50,6 +50,7 @@ class StudyRecord:
 			ax.grid(True)
 			ax.legend()
 
+			plt.title(self.plot_title)
 			plt.xlabel(self.plot_x_label)
 			plt.ylabel(self.plot_y_label)
 
@@ -94,7 +95,7 @@ class StudyRecord:
 				plt.yticks(Y1)
 				plt.grid(True)
 
-				plt.title(self.plot_title + " for " + self.track[seg_no] + " at mesh size " + str(self.segment_distance[seg_no]))
+				plt.title(self.plot_title + " on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
 				plt.xlabel(self.plot_x_label)
 				plt.ylabel(self.plot_y_label)
 
@@ -155,6 +156,15 @@ def run(filename):
 		num_xtests = len(test_points[0])
 		num_ytests = len(test_points2[0])
 
+		if "plot_x_points" in s_OBJ and isinstance(s_OBJ["plot_x_points"],list) :
+			pass
+		else:
+			s_OBJ['plot_x_points'] = tests[0]["test_vals"]
+		if "plot_y_points" in s_OBJ and isinstance(s_OBJ["plot_y_points"],list) :
+			pass
+		else:
+			s_OBJ['plot_y_points'] = tests2[0]["test_vals"]
+
 		# set up some preliminary values
 		times = np.zeros((len(segList), num_xtests, num_ytests))
 
@@ -208,7 +218,12 @@ def run(filename):
 
 		# set up some preliminary values
 		num_tests = len(test_points[0])
-		plot_points = np.array(s_OBJ["plot_points"])
+		if "plot_points" in s_OBJ and isinstance(s_OBJ["plot_points"],list) :
+			pass
+		else:
+			s_OBJ['plot_points'] = tests[0]["test_vals"]
+
+
 		times = np.zeros((len(segList), num_tests))
 
 		# run 1D study
@@ -239,4 +254,3 @@ def run(filename):
 				# plot_velocity_and_events(output[test_no], "time")
 
 		return StudyRecord(output, times, segList, s_OBJ)
-

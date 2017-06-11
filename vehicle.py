@@ -36,20 +36,26 @@ class Vehicle(object):
 
     if crank_rpm <= v.engine_rpms[0]:
       # cap to lowest hp
-      return v.engine_torque[0] * v.engine_reduction * gear_ratio * v.final_drive_reduction / v.tire_radius
+      return (v.engine_torque[0] * v.engine_reduction * gear_ratio * v.final_drive_reduction / v.tire_radius, crank_rpm)
     elif crank_rpm > v.engine_rpms[-1]:
-      return 0 # simulate hitting the rev limiter
+      return (0,crank_rpm) # simulate hitting the rev limiter
     else:
       for i in range(1, len(v.engine_rpms)):
         if crank_rpm < v.engine_rpms[i]:
           torque = v.engine_torque[i] + (crank_rpm - v.engine_rpms[i]) * (v.engine_torque[i-1] - v.engine_torque[i]) / (v.engine_rpms[i-1] - v.engine_rpms[i])
-          return torque * v.engine_reduction * gear_ratio * v.final_drive_reduction / v.tire_radius
+          return (torque * v.engine_reduction * gear_ratio * v.final_drive_reduction / v.tire_radius, crank_rpm)
 
-  def best_gear(self, v):
-    opts = [self.eng_force(v, int(gear)) for gear in range(len(self.gears))]
-    if 0 in opts:
-      return len(opts)-1
-    return np.argmax(opts)
+  def best_gear(self, v, fr_limit):
+    opts = [self.eng_force(v, int(gear))[0] for gear in range(len(self.gears))]
+    best = 0
+    besti = -1
+    for i in range(len(opts)):
+      if opts[i] >= best:
+        best = opts[i]
+        besti = i
+    return besti
+
+
 
   def __init__(self):
     pass

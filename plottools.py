@@ -9,6 +9,8 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   fig, ax = plt.subplots(2, sharex=True)
   fig.canvas.set_window_title(title)
 
+  fig.suptitle(title)
+
   t = output[:, sim.O_TIME]
   x = output[:, sim.O_DISTANCE]
   v = output[:, sim.O_VELOCITY]
@@ -19,6 +21,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
 
   along = output[:, sim.O_LONG_ACC]
   alat = output[:, sim.O_LAT_ACC]
+  eng_rpm = output[:, sim.O_ENG_RPM]
 
   curv = output[:, sim.O_CURVATURE]*100
 
@@ -34,6 +37,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   ax[1].plot(xaxis,along,lw=4,label='Longitudinal g\'s')
   ax[1].plot(xaxis,alat,lw=4,label='Lateral g\'s')
   ax[1].plot(xaxis,gear,lw=4,label='Gear')
+  ax[1].plot(xaxis,eng_rpm/1000, lw=4, label='RPM x1000')
 
   lim = max(v)
   alpha =  1
@@ -53,7 +57,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
       sector=sec
   ax[0].set_ylim((0,lim+1))
   #ax[1].set_ylim((min((min(along),min(alat)))-0.1,0.1+max((max(along),max(alat)))))
-  ax[1].set_ylim(-5,5)
+  ax[1].set_ylim(-5,12)
   plt.xlim((0,max(xaxis)))
 
   #sectors = set(output[:,3])
@@ -93,7 +97,8 @@ class DetailZoom:
         return
 
       outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
-      self.plotDetail(outputIndex)
+      title = 'Details for ' + self.record.plot_x_label + ': ' + ("%.3f"%self.record.plot_points[minXIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
+      self.plotDetail(outputIndex, title)
 
     elif self.record.kind == "3D":
       distances = np.array([abs(p - x) for p in self.record.plot_x_points])
@@ -107,7 +112,7 @@ class DetailZoom:
         return
 
       outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex
-      title = 'Details for ' + str(self.record.plot_x_points[minXIndex]) + ' ' + self.record.plot_x_label + ' and ' + str(self.record.plot_y_points[minYIndex]) + ' ' + self.record.plot_y_label
+      title = 'Details for ' + self.record.plot_x_label + ": " + ("%.3f"%self.record.plot_x_points[minXIndex]) + ', ' +  self.record.plot_y_label + ": " + ("%.3f"%self.record.plot_y_points[minYIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
       self.plotDetail(outputIndex, title)
 
   def plotDetail(self, i, title='Details'):
