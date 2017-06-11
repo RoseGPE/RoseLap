@@ -13,8 +13,8 @@ import study
 
 # esf = study.run("esf.json")
 # esf.plot()
-
-esf3D = study.run("esf3d.yaml")
+print('Enter study name...\n> ')
+esf3D = study.run(raw_input())
 esf3D.plot()
 
 '''

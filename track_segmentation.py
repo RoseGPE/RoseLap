@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 epsilon = 1e-4
 
 def load_dxf(path_to_file):
+  print(path_to_file)
   with open(path_to_file,'r') as p:
     
     lines = [x.strip() for x in p.read().splitlines()]
@@ -77,7 +78,7 @@ def load_dxf(path_to_file):
           for mp in matches_pos:
             if dxf_output[mp][-2] > dxf_output[mp][-1]:
               connectivity.append(mp)
-              hp = dxf_output[mp][-2:]
+              hop = dxf_output[mp][-2:]
               fine = True
           for mn in matches_neg:
             if dxf_output[mn][-4] > dxf_output[mn][-3]:
