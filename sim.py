@@ -339,21 +339,3 @@ def colorgen(num_colors, idx):
   def map_index_to_rgb_color(index):
     return scalar_map.to_rgba(index)
   return map_index_to_rgb_color(idx)
-
-if __name__ == '__main__':
-  import vehicle
-  import track_segmentation
-  import plottools
-
-  vehicle.load("basic.yaml")
-
-  track = './DXFs/ne_autocross_2015.dxf'
-  segments = track_segmentation.dxf_to_segments(track, 0.1)
-
-  #track_segmentation.plot_segments(segments)
-
-  output = solve(vehicle.v, segments)
-
-  plottools.plot_velocity_and_events(output)
-
-  plottools.plt.show()

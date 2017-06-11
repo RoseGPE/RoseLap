@@ -254,4 +254,3 @@ def run(filename):
 				# plot_velocity_and_events(output[test_no], "time")
 
 		return StudyRecord(output, times, segList, s_OBJ)
-

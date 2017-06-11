@@ -97,7 +97,7 @@ class DetailZoom:
         return
 
       outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
-      title = 'Details for ' + self.record.plot_x_label + ': ' + str(self.record.plot_points[minXIndex])
+      title = 'Details for ' + self.record.plot_x_label + ': ' + ("%.3f"%self.record.plot_points[minXIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
       self.plotDetail(outputIndex, title)
 
     elif self.record.kind == "3D":
@@ -112,7 +112,7 @@ class DetailZoom:
         return
 
       outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex
-      title = 'Details for ' + self.record.plot_x_label + ": " + str(self.record.plot_x_points[minXIndex]) + ', ' +  self.record.plot_y_label + ": " + str(self.record.plot_y_points[minYIndex])
+      title = 'Details for ' + self.record.plot_x_label + ": " + ("%.3f"%self.record.plot_x_points[minXIndex]) + ', ' +  self.record.plot_y_label + ": " + ("%.3f"%self.record.plot_y_points[minYIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
       self.plotDetail(outputIndex, title)
 
   def plotDetail(self, i, title='Details'):
