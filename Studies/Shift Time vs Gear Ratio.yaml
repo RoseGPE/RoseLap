@@ -1,10 +1,16 @@
-vehicle: basic.yaml
+vehicle: rgp007.yaml
 track:
 - acceleration.dxf
+- ne_autocross_2015.dxf
+- ne_endurance_2015.dxf
 segment_distance:
+- 0.2
+- 0.2
 - 0.2
 steady_state:
 - no
+- no
+- yes
 tests:
 - target: final_drive_reduction
   operation: replace
@@ -18,7 +24,7 @@ tests2:
   test_vals:
     range_start: 0.02
     range_end: 0.2
-    range_step: 0.015
+    range_step: 0.01
 plot_style: basic
 plot_title: Track Time
 plot_x_label: Final Drive Ratio
