@@ -3,7 +3,7 @@ from plottools import *
 import vehicle
 import track_segmentation
 import fancyyaml as yaml
-import pickle
+import cPickle as pickle
 import time
 """
 Study Schema:
@@ -22,7 +22,7 @@ plot_points: [float-array]
 """
 
 def load(filename):
-	with open('./Results/'+filename, 'r') as f:
+	with open('./Results/'+filename, 'rb') as f:
 		return pickle.load(f)
 
 class StudyRecord:
@@ -41,8 +41,10 @@ class StudyRecord:
 			setattr(self, key, sobj[key])
 
 	def save(self):
-		with open('./Results/'+self.filename, 'w+') as f:
-			pickle.dump(self, f)
+		print('Saving...')
+		with open('./Results/'+self.filename, 'wb') as f:
+			pickle.dump(self, f, protocol=2)
+		print('Saved.')
 
 	def plot(self):
 		print("Plotting results...")

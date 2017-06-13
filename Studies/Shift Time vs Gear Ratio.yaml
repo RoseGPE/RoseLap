@@ -1,23 +1,23 @@
 vehicle: rgp007.yaml
 track:
 - acceleration.dxf
-#- ne_autocross_2015.dxf
-#- ne_endurance_2015.dxf
+- ne_autocross_2015.dxf
+- ne_endurance_2015.dxf
 segment_distance:
 - 0.2
-#- 0.2
-#- 0.2
+- 0.2
+- 0.2
 steady_state:
 - no
-#- no
-#- yes
+- no
+- yes
 tests:
 - target: final_drive_reduction
   operation: replace
   test_vals:
     range_start: 2.25
     range_end: 3.25
-    range_step: 0.2
+    range_step: 0.1
 tests2:
 - target: shift_time
   operation: replace
