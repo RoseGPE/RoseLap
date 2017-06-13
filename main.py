@@ -1,21 +1,37 @@
+"""
+Usage:
+  roselap.py run <filename> [--no_output]
+  roselap.py load <filename> [--no_output]
+Options:
+  -h --help     Show this screen.
+  --version     Show version.
+"""
+
+
 from sim import *
 import study
 
-# vehicle.load("basic.json")
+from docopt import docopt
 
-# track = './DXFs/loop.dxf'
-# segments = track_segmentation.dxf_to_segments(track, 0.25)
+def run(filename, no_plot):
+    s = study.run(filename)
+    s.save()
+    if not no_plot:
+        s.plot()
+    return s
 
-# output = steady_solve(vehicle.v, segments)
+def load(filename):
+    s = study.load(filename)
+    if not no_plot:
+        s.plot()
+    return s
 
-# plot_velocity_and_events(output)
-# plt.show()
-
-# esf = study.run("esf.json")
-# esf.plot()
-print('Enter study name...\n> ')
-esf3D = study.run(raw_input())
-esf3D.plot()
+if __name__ == '__main__':
+    arguments = docopt(__doc__, version='3.3')
+    if arguments['run']:
+        s=run(arguments['<filename>'], arguments['--no_output'])
+    elif arguments['load']:
+        s=load(arguments['<filename>'], arguments['--no_output'])
 
 '''
 better detail plot titles
