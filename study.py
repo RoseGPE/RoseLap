@@ -3,6 +3,8 @@ from plottools import *
 import vehicle
 import track_segmentation
 import fancyyaml as yaml
+import cPickle as pickle
+import time
 """
 Study Schema:
 vehicle: [string] filename for .json in the Vehicles directory
@@ -19,16 +21,30 @@ plot_y_label: [string]
 plot_points: [float-array]
 """
 
+def load(filename):
+	with open('./Results/'+filename, 'rb') as f:
+		return pickle.load(f)
+
 class StudyRecord:
-	def __init__(self, output, times, segList, sobj, kind="2D", ):
+	def __init__(self, filename, study_text, timestamp_start, timestamp_end, output, times, segList, sobj, kind="2D"):
+		self.filename=filename
+		self.study_text=study_text
 		self.output = output
 		self.times = times
 		self.segList = segList
 		self.sobj = sobj
 		self.kind = kind
+		self.timestamp_start = timestamp_start
+		self.timestamp_end = timestamp_end
 
 		for key in sobj:
 			setattr(self, key, sobj[key])
+
+	def save(self):
+		print('Saving...')
+		with open('./Results/'+self.filename, 'wb') as f:
+			pickle.dump(self, f, protocol=2)
+		print('Saved.')
 
 	def plot(self):
 		print("Plotting results...")
@@ -57,7 +73,7 @@ class StudyRecord:
 
 			# interactivity, maybe
 			if len(self.tests) == 1:
-				print("we doin this")
+				#print("we doin this")
 				details = DetailZoom(self)
 				fig.canvas.mpl_connect('button_press_event', details.onpick)
 
@@ -101,7 +117,7 @@ class StudyRecord:
 
 				# interactivity, maybe
 				if len(self.tests) == 1:
-					print("we doin this")
+					#print("we doin this")
 					details = DetailZoom(self)
 					fig.canvas.mpl_connect('button_press_event', details.onpick)
 
@@ -119,12 +135,15 @@ class StudyRecord:
 		print("Done!")
 
 def run(filename):
+	timestamp_start = time.time()
 	print("Loading test...")
 
 	# load the study YAML into s_OBJ
 	study_YAML = './Studies/' + filename
 	with open(study_YAML) as data:
 	  s_OBJ = yaml.load(data)
+	with open(study_YAML) as data:
+	  study_text = data.read()
 
 	# load vehicle
 	vehicle.load(s_OBJ["vehicle"])
@@ -211,7 +230,7 @@ def run(filename):
 						print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
 
 		print("Done!")
-		return StudyRecord(output, times, segList, s_OBJ, "3D")
+		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, segList, s_OBJ, "3D")
 
 	except KeyError as e: # run 2D test
 		print("Running tests...")
@@ -253,4 +272,4 @@ def run(filename):
 				print("\t\tTest " + str(test_no + 1) + " complete!")
 				# plot_velocity_and_events(output[test_no], "time")
 
-		return StudyRecord(output, times, segList, s_OBJ)
+		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, segList, s_OBJ)
