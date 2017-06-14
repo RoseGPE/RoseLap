@@ -1,6 +1,6 @@
 vehicle: rgp007.yaml
 track:
-- acceleration.dxf
+- ne_autocross_2015.dxf
 segment_distance:
 - 0.2
 steady_state:
@@ -16,4 +16,5 @@ plot_style: basic
 plot_title: Track Time
 plot_x_label: Final Drive Ratio
 plot_y_label: Track Time
+model: twotires
 #plot_points: Null

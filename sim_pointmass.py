@@ -1,36 +1,7 @@
 import numpy as np
 import math
 
-# Status Constant Definition
-S_BRAKING = 1
-S_ENG_LIM_ACC = 2
-S_TIRE_LIM_ACC = 3
-S_SUSTAINING = 4
-S_DRAG_LIM = 5
-S_SHIFTING = 6
-S_TOPPED_OUT = 7
-
-# Output Index Constant Definitions (Columns)
-O_TIME = 0
-O_DISTANCE = 1
-O_VELOCITY = 2
-O_NF = 3
-O_NR = 4
-O_SECTORS = 5
-O_STATUS = 6
-O_GEAR = 7
-O_LONG_ACC = 8
-O_LAT_ACC = 9
-O_FR_REMAINING = 11
-O_FF_REMAINING = 10
-O_CURVATURE = 12
-O_ENG_RPM = 13
-
-# Shifting status codes
-IN_PROGRESS = 0
-JUST_FINISHED = 1
-NOT_SHIFTING = 2
-
+from constants import *
 
 def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   """
@@ -42,58 +13,44 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   """
 
   # init values
-  Nf = prior_result[O_NF];
-  Nr = prior_result[O_NR];
+  N = prior_result[O_NF];
   v0 = prior_result[O_VELOCITY];
   x0 = prior_result[O_DISTANCE];
   t0 = prior_result[O_TIME];
   status = S_TOPPED_OUT
   F_longitudinal = 0
 
-  Ff_lat = (1-vehicle.weight_bias)*segment.curvature*vehicle.mass*v0**2
-  Fr_lat = vehicle.weight_bias*segment.curvature*vehicle.mass*v0**2
+  Ftire_lat = segment.curvature*vehicle.mass*v0**2
   
-  Fr_lim = (vehicle.mu*Nr)
-  Ff_lim = (vehicle.mu*Nf) 
+  Ftire_lim = (vehicle.mu*N) 
 
-  if Fr_lat > Fr_lim or Ff_lat > Ff_lim :
+  if Ftire_lat > Ftire_lim:
     return None
 
-  Fr_remaining = np.sqrt(Fr_lim**2 - Fr_lat**2)
+  Ftire_remaining = np.sqrt(Ftire_lim**2 - Ftire_lat**2)
 
-  Fr_engine_limit,eng_rpm = vehicle.eng_force(v0, int(gear))
-
-  Ff_remaining = np.sqrt(Ff_lim**2 - Ff_lat**2)
+  Ftire_engine_limit, eng_rpm = vehicle.eng_force(v0, int(gear))
 
   Fdown = vehicle.alpha_downforce()*v0**2;
   Fdrag = vehicle.alpha_drag()*v0**2;
 
   if brake:
     status = S_BRAKING
-    F_brake = min(Ff_remaining/vehicle.front_brake_bias(), Fr_remaining/vehicle.rear_brake_bias())
-    Fr_long = -F_brake*vehicle.rear_brake_bias()
-    Ff_long = -F_brake*vehicle.front_brake_bias()
-    # Fr_long = -Fr_remaining
-    # Ff_long = -Ff_remaining
+    Ftire_long = -Ftire_remaining
     gear = np.nan
   elif shifting:
     status = S_SHIFTING
-    Fr_long = 0
-    Ff_long = 0
+    Ftire_long = 0
     gear = np.nan
   else:
     status = S_ENG_LIM_ACC
-    Fr_long = Fr_engine_limit
-    if Fr_long > Fr_remaining:
+    Ftire_long = Ftire_engine_limit
+    if Ftire_long > Ftire_remaining:
       status = S_TIRE_LIM_ACC
-      Fr_long = Fr_remaining
-    Ff_long = 0
+      Ftire_long = Ftire_remaining
 
-
-  a_long = (Fr_long+Ff_long-Fdrag)/vehicle.mass
-
-  F_longitudinal = Ff_long+Fr_long - Fdrag
-  a = F_longitudinal / vehicle.mass
+  F_longitudinal = Ftire_long - Fdrag
+  a_long = F_longitudinal / vehicle.mass
 
   try:
     vf = math.sqrt(v0**2 + 2*a_long*segment.length)
@@ -106,70 +63,6 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   if eng_rpm > vehicle.engine_rpms[-1]:
     status = S_TOPPED_OUT
 
-  Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
-      - Fdown*vehicle.weight_bias
-      - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-      + vehicle.mass*vehicle.g
-      + Fdown
-      - Fdrag*vehicle.cp_height/vehicle.wheelbase_length )
-
-  Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-      + Fdown*vehicle.cp_bias
-      + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-      + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
-
-  Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
-  Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
-  
-  Fr_lim = (vehicle.mu*Nr)
-  Ff_lim = (vehicle.mu*Nf) 
-
-  a_long_start = a_long
-  
-  nmax = 10
-  n = 0
-  while Fr_lat > Fr_lim-1e-2 or Ff_lat > Ff_lim-1e-2 :
-    #return None
-    a_long-=a_long_start*1/nmax
-    vf = math.sqrt(v0**2 + 2*a_long*segment.length)
-
-    Fdown = vehicle.alpha_downforce()*vf**2;
-    Fdrag = vehicle.alpha_drag()*vf**2;
-
-    Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
-      - Fdown*vehicle.weight_bias
-      - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-      + vehicle.mass*vehicle.g
-      + Fdown
-      - Fdrag*vehicle.cp_height/vehicle.wheelbase_length )
-
-    Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-        + Fdown*vehicle.cp_bias
-        + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-        + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
-
-    Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
-    Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
-    
-    Fr_lim = (vehicle.mu*Nr)
-    Ff_lim = (vehicle.mu*Nf)
-
-    # back calculate outputs
-    if not (brake or shifting):
-      Fr_long = a_long*vehicle.mass+Fdrag
-      status = S_TIRE_LIM_ACC
-    elif brake:
-      F_brake = -a_long*vehicle.mass-Fdrag
-      Fr_long = -F_brake*vehicle.rear_brake_bias()
-      Ff_long = -F_brake*vehicle.front_brake_bias()
-
-
-    n+=1
-    if n > nmax:
-      return None
-
-
-
   try:
     tf = t0 + segment.length/((v0+vf)/2)
   except:
@@ -180,15 +73,15 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     tf,
     xf,
     vf,
-    Nf,
-    Nr, 
+    N,
+    0,
     segment.sector,
     status,
     gear,
     a_long / vehicle.g, 
     (v0 ** 2) * segment.curvature / vehicle.g, 
-    Ff_remaining, 
-    Fr_remaining, 
+    Ftire_remaining,
+    0,
     segment.curvature,
     eng_rpm
   ])
@@ -197,18 +90,17 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
 def solve(vehicle, segments, output_0 = None):
   # set up initial stuctures
-  output = np.zeros((len(segments), 14))
-  precrash_output = np.zeros((len(segments), 14))
+  output = np.zeros((len(segments), O_MATRIX_COLS))
+  precrash_output = np.zeros((len(segments), O_MATRIX_COLS))
   shifting = NOT_SHIFTING
   
   if output_0 is None:
-    output[0,3] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g
-    output[0,4] = vehicle.mass*vehicle.weight_bias*vehicle.g
+    output[0,O_NF] = vehicle.mass*vehicle.g
     gear = vehicle.best_gear(output[0,O_VELOCITY], np.inf)
   else:
     output[0,:] = output_0
-    output[0,0] = 0
-    output[0,1] = 0
+    output[0,O_TIME] = 0
+    output[0,O_DISTANCE] = 0
     gear = vehicle.best_gear(output_0[O_VELOCITY], output_0[O_FR_REMAINING])
 
   brake = False
@@ -233,7 +125,7 @@ def solve(vehicle, segments, output_0 = None):
       print('damnit bobby')
       return None
     if (gear is None) and shiftpt < 0:
-      gear = vehicle.best_gear(output[i-1,O_VELOCITY], output[i,O_FR_REMAINING])
+      gear = vehicle.best_gear(output[i-1,O_VELOCITY], output[i,O_FF_REMAINING])
 
     step_result = step(vehicle,output[i-1,:], segments[i], (segments[i+1] if i+1<len(segments) else segments[i]), brake, shiftpt>=0, gear)
     if step_result is None:
@@ -307,7 +199,7 @@ def solve(vehicle, segments, output_0 = None):
 
       output[i] = step_result
 
-      better_gear = vehicle.best_gear(output[i,O_VELOCITY], output[i,O_FR_REMAINING])
+      better_gear = vehicle.best_gear(output[i,O_VELOCITY], output[i,O_FF_REMAINING])
 
       if shiftpt < 0 and gear != better_gear and output[i,O_STATUS]==S_ENG_LIM_ACC and output[i,O_VELOCITY]>shift_v_req:
         gear += int((better_gear-gear)/abs(better_gear-gear))
