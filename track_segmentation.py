@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 epsilon = 1e-4
 
 def load_dxf(path_to_file):
-  print(path_to_file)
+  #print(path_to_file)
   with open(path_to_file,'r') as p:
     
     lines = [x.strip() for x in p.read().splitlines()]
