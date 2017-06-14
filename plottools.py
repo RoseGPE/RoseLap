@@ -73,14 +73,17 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
 
 
 class DetailZoom:
-  def __init__(self, record):
+  def __init__(self, record, offset, axes):
     self.record = record
     self.outputs = record.output
+    self.offset = offset
+    self.axes_governed = axes
 
   def onpick(self, event):
     # get mouse data
-    x = event.xdata
-    y = event.ydata
+    x = event.mouseevent.xdata
+    y = event.mouseevent.ydata
+    print(self.offset)
 
     # find closest point
     distances = []
@@ -96,7 +99,7 @@ class DetailZoom:
       if distances[minYIndex] > 0.1:
         return
 
-      outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
+      outputIndex = minYIndex * len(self.record.plot_points) + minXIndex + self.offset
       title = 'Details for ' + self.record.plot_x_label + ': ' + ("%.3f"%self.record.plot_points[minXIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
       self.plotDetail(outputIndex, title)
 
@@ -111,7 +114,7 @@ class DetailZoom:
       if distances[minYIndex] > 0.1:
         return
 
-      outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex
+      outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex + self.offset
       title = 'Details for ' + self.record.plot_x_label + ": " + ("%.3f"%self.record.plot_x_points[minXIndex]) + ', ' +  self.record.plot_y_label + ": " + ("%.3f"%self.record.plot_y_points[minYIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
       self.plotDetail(outputIndex, title)
 
