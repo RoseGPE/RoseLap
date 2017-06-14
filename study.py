@@ -49,9 +49,8 @@ class StudyRecord:
 	def plot(self):
 		print("Plotting results...")
 
-		fig, ax = plt.subplots()
-
 		if self.kind == "2D":
+			fig, ax = plt.subplots()
 			fig.canvas.set_window_title('Study Results')
 
 			# plot the study
@@ -73,17 +72,20 @@ class StudyRecord:
 
 			# interactivity, maybe
 			if len(self.tests) == 1:
-				#print("we doin this")
-				details = DetailZoom(self)
-				fig.canvas.mpl_connect('button_press_event', details.onpick)
+				print("we doin this")
+			details = DetailZoom(self, 0)
+			fig.canvas.mpl_connect('pick_event', details.onpick)
+			fig.canvas.show()
 
-			plt.draw()
 			plt.show()
 
 		elif self.kind == "3D":
-			fig.canvas.set_window_title('3D Study Results')
-
+			axes = []
+			details = []
 			for seg_no in range(len(self.segList)):
+				fig, ax = plt.subplots()
+				axes.append(ax)
+				fig.canvas.set_window_title('3D Study Results')
 				# data setup
 				X1 = np.array(self.plot_x_points)
 				Y1 = np.array(self.plot_y_points)
@@ -116,19 +118,16 @@ class StudyRecord:
 				plt.ylabel(self.plot_y_label)
 
 				# interactivity, maybe
-				if len(self.tests) == 1:
+				# if len(self.tests) == 1:
 					#print("we doin this")
-					details = DetailZoom(self)
-					fig.canvas.mpl_connect('button_press_event', details.onpick)
+				
 
-				plt.draw()
-				fig.show()
+				details.append(DetailZoom(self, seg_no))
+				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
 
-				if seg_no != len(self.segList) - 1:
-					fig, ax = plt.subplots()
-					fig.canvas.set_window_title('3D Study Results')
-				else:
-					plt.show()
+				fig.canvas.show()
+
+			plt.show()
 		else:
 			print("Invalid Study")
 

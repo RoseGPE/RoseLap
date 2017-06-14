@@ -1,0 +1,34 @@
+# Brake Bias
+
+vehicle: rgp007.yaml
+track:
+- ne_autocross_2013.dxf
+- ne_autocross_2015.dxf
+segment_distance:
+- 0.15
+- 0.15
+steady_state:
+- no
+- no
+tests:
+- target: brake_bias
+  operation: replace
+  test_vals:
+  - 0.1
+  - 0.3
+  - 0.5
+  - 0.6
+  - 0.7
+  - 0.75
+  - 0.8
+  - 0.825
+  - 0.85
+  - 0.875
+  - 0.9
+  - 0.925
+  - 0.95
+plot_style: basic
+plot_title: Track Time
+plot_x_label: Brake Bias
+plot_y_label: Track Time
+#plot_points: Null
