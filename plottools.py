@@ -73,49 +73,54 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
 
 
 class DetailZoom:
-  def __init__(self, record, offset, axes):
+  def __init__(self, record, seg_no):
     self.record = record
     self.outputs = record.output
-    self.offset = offset
-    self.axes_governed = axes
+    self.seg_no = seg_no
 
   def onpick(self, event):
     # get mouse data
     x = event.mouseevent.xdata
     y = event.mouseevent.ydata
-    print(self.offset)
+    
 
     # find closest point
     distances = []
     if self.record.kind == "2D":
+      print('okay now')
       distances = np.array([abs(p - x) for p in self.record.plot_points])
       minXIndex = distances.argmin()
-      if distances[minXIndex] > 0.1:
-        return
+      # if distances[minXIndex] > 0.1:
+      #   print('x prob')
+      #   return
 
       relevantTimes = np.transpose(self.record.times[:, minXIndex])
       distances = np.array([abs(t - y) for t in relevantTimes])
       minYIndex = distances.argmin()
-      if distances[minYIndex] > 0.1:
-        return
+      # if distances[minYIndex] > 0.1:
+      #   print('y prob')
+      #   return
 
-      outputIndex = minYIndex * len(self.record.plot_points) + minXIndex + self.offset
-      title = 'Details for ' + self.record.plot_x_label + ': ' + ("%.3f"%self.record.plot_points[minXIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
+
+      outputIndex = minYIndex * len(self.record.plot_points) + minXIndex
+      title = 'Details for ' + self.record.track[minYIndex] + ', ' + self.record.plot_x_label + '= ' + ("%.3f"%self.record.plot_points[minXIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
+      print(title)
       self.plotDetail(outputIndex, title)
 
     elif self.record.kind == "3D":
+      offset = len(self.record.plot_x_points)*len(self.record.plot_y_points)*self.seg_no
       distances = np.array([abs(p - x) for p in self.record.plot_x_points])
       minXIndex = distances.argmin()
-      if distances[minXIndex] > 0.1:
-        return
+      # if distances[minXIndex] > 0.1:
+      #   return
 
       distances = np.array([abs(p - y) for p in self.record.plot_y_points])
       minYIndex = distances.argmin()
-      if distances[minYIndex] > 0.1:
-        return
+      # if distances[minYIndex] > 0.1:
+      #   return
 
-      outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex + self.offset
-      title = 'Details for ' + self.record.plot_x_label + ": " + ("%.3f"%self.record.plot_x_points[minXIndex]) + ', ' +  self.record.plot_y_label + ": " + ("%.3f"%self.record.plot_y_points[minYIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
+      outputIndex = minXIndex * len(self.record.plot_y_points) + minYIndex + offset
+      title = 'Details for ' + self.record.track[self.seg_no] + ', ' + self.record.plot_x_label + "= " + ("%.3f"%self.record.plot_x_points[minXIndex]) + ', ' +  self.record.plot_y_label + ": " + ("%.3f"%self.record.plot_y_points[minYIndex]) + " (" + ("%.3f"%self.outputs[outputIndex][-1,sim.O_TIME]) + "s)"
       self.plotDetail(outputIndex, title)
 
   def plotDetail(self, i, title='Details'):

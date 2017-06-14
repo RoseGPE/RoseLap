@@ -50,6 +50,7 @@ class StudyRecord:
 		print("Plotting results...")
 
 		if self.kind == "2D":
+			fig, ax = plt.subplots()
 			fig.canvas.set_window_title('Study Results')
 
 			# plot the study
@@ -70,12 +71,12 @@ class StudyRecord:
 
 
 			# interactivity, maybe
-			#if len(self.tests) == 1:
-				#print("we doin this")
-			#details = DetailZoom(self, len(self.times[0])*seg_no)
-			#fig.canvas.mpl_connect('button_press_event', details.onpick)
+			if len(self.tests) == 1:
+				print("we doin this")
+			details = DetailZoom(self, 0)
+			fig.canvas.mpl_connect('pick_event', details.onpick)
+			fig.canvas.show()
 
-			plt.draw()
 			plt.show()
 
 		elif self.kind == "3D":
@@ -121,7 +122,7 @@ class StudyRecord:
 					#print("we doin this")
 				
 
-				details.append(DetailZoom(self, len(self.plot_x_points)*len(self.plot_y_points)*seg_no, ax))
+				details.append(DetailZoom(self, seg_no))
 				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
 
 				fig.canvas.show()
