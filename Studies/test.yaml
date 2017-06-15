@@ -1,8 +1,8 @@
 vehicle: rgp007.yaml
 track:
-- ne_autocross_2015.dxf
+- test_ax2.dxf
 segment_distance:
-- 0.2
+- 0.1
 steady_state:
 - no
 tests:

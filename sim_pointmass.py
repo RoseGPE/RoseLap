@@ -13,12 +13,15 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   """
 
   # init values
-  N = prior_result[O_NF];
   v0 = prior_result[O_VELOCITY];
   x0 = prior_result[O_DISTANCE];
   t0 = prior_result[O_TIME];
   status = S_TOPPED_OUT
-  F_longitudinal = 0
+
+  Fdown = vehicle.alpha_downforce()*v0**2;
+  Fdrag = vehicle.alpha_drag()*v0**2;
+
+  N = vehicle.mass*vehicle.g+Fdown
 
   Ftire_lat = segment.curvature*vehicle.mass*v0**2
   
@@ -31,8 +34,7 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
   Ftire_engine_limit, eng_rpm = vehicle.eng_force(v0, int(gear))
 
-  Fdown = vehicle.alpha_downforce()*v0**2;
-  Fdrag = vehicle.alpha_drag()*v0**2;
+  
 
   if brake:
     status = S_BRAKING
@@ -63,8 +65,9 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   if eng_rpm > vehicle.engine_rpms[-1]:
     status = S_TOPPED_OUT
 
+  vavg = ((v0+vf)/2)
   try:
-    tf = t0 + segment.length/((v0+vf)/2)
+    tf = t0 + segment.length/vavg
   except:
     tf = t0
   xf = x0 + segment.length
@@ -79,7 +82,7 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     status,
     gear,
     a_long / vehicle.g, 
-    (v0 ** 2) * segment.curvature / vehicle.g, 
+    (vavg ** 2) * segment.curvature / vehicle.g, 
     Ftire_remaining,
     0,
     segment.curvature,
