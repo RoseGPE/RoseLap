@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 import sim
+from constants import *
 
 def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
-  fig, ax = plt.subplots(2, sharex=True)
+  fig, ax = plt.subplots(5, sharex=True)
   fig.canvas.set_window_title(title)
 
   fig.suptitle(title)
@@ -33,41 +34,60 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
     plt.xlabel('Distance travelled')
 
   ax[0].plot(xaxis,v,lw=5,label='Velocity')
-  ax[0].plot(xaxis,curv,lw=5,label='Curvature',marker='.',linestyle='none')
-  ax[1].plot(xaxis,along,lw=4,label='Longitudinal g\'s')
-  ax[1].plot(xaxis,alat,lw=4,label='Lateral g\'s')
-  ax[1].plot(xaxis,gear,lw=4,label='Gear')
-  ax[1].plot(xaxis,eng_rpm/1000, lw=4, label='RPM x1000')
+  ax[0].set_ylim((0,max(v)*1.05))
+  
 
-  lim = max(v)
+  ax[1].plot(xaxis,curv,lw=5,label='Curvature',marker='.',linestyle='none')
+  ax[1].set_ylim(0,max(curv)*1.05)
+
+  ax[2].plot(xaxis,output[:, O_LONG_ACC], lw=4,label='Longitudinal g\'s')
+  ax[2].plot(xaxis,output[:, O_LAT_ACC],lw=4,label='Lateral g\'s')
+  ax[2].set_ylim(-3,3)
+
+  ax[3].plot(xaxis,output[:, O_GEAR]+1,lw=4,label='Gear')
+  ax[3].plot(xaxis,output[:, O_ENG_RPM]/1000, lw=4, label='RPM x1000')
+  ax[3].set_ylim(0, 10)
+
+  forces = output[:, [O_NF, O_NR, O_FF_REMAINING, O_FR_REMAINING]]
+  force_lim = max(forces.min(), forces.max(), key=abs)*1.05
+  ax[4].plot(xaxis,output[:, O_NF], lw=4,label='Front normal force')
+  ax[4].plot(xaxis,output[:, O_NR], lw=4,label='Rear normal force')
+  ax[4].plot(xaxis,output[:, O_FF_REMAINING], lw=4,label='Remaining front long. force')
+  ax[4].plot(xaxis,output[:, O_FR_REMAINING], lw=4,label='Remaining rear long. force')
+  ax[4].set_ylim(-force_lim,force_lim)
+
+
+
+  
+
+
+
+  lim = max(curv)
   alpha =  1
 
-  ax[0].fill_between(xaxis, 0, lim, where= status==sim.S_BRAKING,      facecolor='#e22030', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==sim.S_ENG_LIM_ACC,  facecolor='#50d21d', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==sim.S_TIRE_LIM_ACC, facecolor='#1d95d2', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==sim.S_SUSTAINING,   facecolor='#d2c81c', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==sim.S_DRAG_LIM,     facecolor='#e2952b', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==sim.S_SHIFTING,     facecolor='#454545', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, lim, where= status==sim.S_TOPPED_OUT,   facecolor='#7637a2', alpha=alpha)
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_BRAKING,      facecolor='#e22030', alpha=alpha)
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_ENG_LIM_ACC,  facecolor='#50d21d', alpha=alpha)
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_TIRE_LIM_ACC, facecolor='#1d95d2', alpha=alpha)
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_SUSTAINING,   facecolor='#d2c81c', alpha=alpha)
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_DRAG_LIM,     facecolor='#e2952b', alpha=alpha)
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_SHIFTING,     facecolor='#454545', alpha=alpha)
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_TOPPED_OUT,   facecolor='#7637a2', alpha=alpha)
 
   sector = sectors[0]
   for idx,sec in enumerate(sectors):
     if sec!=sector:
-      ax[0].axvline(xaxis[idx], color='black', lw=2, alpha=0.9)
+      ax[1].axvline(xaxis[idx], color='black', lw=2, alpha=0.9)
       sector=sec
-  ax[0].set_ylim((0,lim+1))
-  #ax[1].set_ylim((min((min(along),min(alat)))-0.1,0.1+max((max(along),max(alat)))))
-  ax[1].set_ylim(-5,12)
+  
   plt.xlim((0,max(xaxis)))
 
   #sectors = set(output[:,3])
   #for sector in sectors:
   #  ax.fill_between(t, -100, 100, where=output[:,3]==sector, facecolor=colorgen(len(sectors), sector), alpha=0.3)
 
-  
-  ax[0].grid(True)
-  ax[0].legend()
-  ax[1].legend()
+  for a in ax:
+    a.grid(True)
+    a.legend()
 
   plt.draw()
 

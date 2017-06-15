@@ -11,7 +11,7 @@ tests:
   test_vals:
     range_start: 2.25
     range_end: 3.25
-    range_step: 0.1
+    range_step: 0.02
 plot_style: basic
 plot_title: Track Time
 plot_x_label: Final Drive Ratio
