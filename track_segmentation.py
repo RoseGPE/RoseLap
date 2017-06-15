@@ -4,9 +4,6 @@ import math
 import itertools as it
 import time
 
-
-import matplotlib.pyplot as plt
-
 epsilon = 1e-4
 
 def load_dxf(path_to_file):

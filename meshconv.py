@@ -1,4 +1,5 @@
-from sim import *
+import sim_twotires
+import sim_pointmass
 from plottools import *
 import vehicle
 import track_segmentation
@@ -14,6 +15,15 @@ def run(filename):
 
 	vehicle.load(mcstudy["vehicle"])
 
+	if not "model" in s_OBJ:
+		mcstudy['model'] = 'twotires'
+	model = mcstudy['model']
+
+	if model == 'twotires':
+		sim_pkg = sim_pointmass
+	else:
+		sim_pkg = sim_twotires
+
 	fig, ax = plt.subplots()
 	fig.canvas.set_window_title('Mesh Convergence Results')
 
@@ -24,7 +34,7 @@ def run(filename):
 		for mesh in meshes:
 			print('        Segment Size: '+str(mesh))
 			segs = track_segmentation.dxf_to_segments("./DXFs/" + track, mesh)
-			output = solve(vehicle.v, segs)
+			output = sim_pkg.solve(vehicle.v, segs)
 			tf.append(output[-1,O_TIME])
 
 		ax.plot(meshes, tf, label=track, marker='x', linestyle='-', picker=5)
@@ -37,5 +47,5 @@ def run(filename):
 	plt.ylabel("Track Time")
 
 	print('Finished!')
-	
+
 	plt.show()

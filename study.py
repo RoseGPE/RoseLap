@@ -1,4 +1,6 @@
-from sim import *
+import sim_twotires
+import sim_pointmass
+from constants import *
 from plottools import *
 import vehicle
 import track_segmentation
@@ -149,6 +151,18 @@ def run(filename):
 
 	print("Setting up tests...")
 
+	if not 'model' in s_OBJ:
+		s_OBJ['model'] = 'twotires'
+	model = s_OBJ['model']
+	print(repr(model))
+
+	if model == 'pointmass':
+		print('point mass model')
+		sim_pkg = sim_pointmass
+	else:
+		print('two tire model')
+		sim_pkg = sim_twotires
+
 	# set up track
 	tracks = s_OBJ["track"]
 	meshes = s_OBJ["segment_distance"]
@@ -220,9 +234,9 @@ def run(filename):
 
 						# solve under the new conditions
 						if s_OBJ["steady_state"][seg_no] == True:
-							output.append(steady_solve(vehicle.v, segList[seg_no]))
+							output.append(sim_pkg.steady_solve(vehicle.v, segList[seg_no]))
 						else:
-							output.append(solve(vehicle.v, segList[seg_no]))
+							output.append(sim_pkg.solve(vehicle.v, segList[seg_no]))
 						
 						times[seg_no, test_no, test2_no] = output[-1][-1, O_TIME]
 
@@ -263,9 +277,9 @@ def run(filename):
 
 				# solve under the new conditions
 				if s_OBJ["steady_state"][seg_no] == True:
-					output.append(steady_solve(vehicle.v, segList[seg_no]))
+					output.append(sim_pkg.steady_solve(vehicle.v, segList[seg_no]))
 				else:
-					output.append(solve(vehicle.v, segList[seg_no]))
+					output.append(sim_pkg.solve(vehicle.v, segList[seg_no]))
 				times[seg_no, test_no] = output[-1][-1, O_TIME]
 
 				print("\t\tTest " + str(test_no + 1) + " complete!")

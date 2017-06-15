@@ -1,36 +1,7 @@
 import numpy as np
 import math
 
-# Status Constant Definition
-S_BRAKING = 1
-S_ENG_LIM_ACC = 2
-S_TIRE_LIM_ACC = 3
-S_SUSTAINING = 4
-S_DRAG_LIM = 5
-S_SHIFTING = 6
-S_TOPPED_OUT = 7
-
-# Output Index Constant Definitions (Columns)
-O_TIME = 0
-O_DISTANCE = 1
-O_VELOCITY = 2
-O_NF = 3
-O_NR = 4
-O_SECTORS = 5
-O_STATUS = 6
-O_GEAR = 7
-O_LONG_ACC = 8
-O_LAT_ACC = 9
-O_FR_REMAINING = 11
-O_FF_REMAINING = 10
-O_CURVATURE = 12
-O_ENG_RPM = 13
-
-# Shifting status codes
-IN_PROGRESS = 0
-JUST_FINISHED = 1
-NOT_SHIFTING = 2
-
+from constants import *
 
 def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   """
@@ -197,18 +168,18 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
 def solve(vehicle, segments, output_0 = None):
   # set up initial stuctures
-  output = np.zeros((len(segments), 14))
-  precrash_output = np.zeros((len(segments), 14))
+  output = np.zeros((len(segments), O_MATRIX_COLS))
+  precrash_output = np.zeros((len(segments), O_MATRIX_COLS))
   shifting = NOT_SHIFTING
   
   if output_0 is None:
-    output[0,3] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g
-    output[0,4] = vehicle.mass*vehicle.weight_bias*vehicle.g
+    output[0,O_NF] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g
+    output[0,O_NR] = vehicle.mass*vehicle.weight_bias*vehicle.g
     gear = vehicle.best_gear(output[0,O_VELOCITY], np.inf)
   else:
     output[0,:] = output_0
-    output[0,0] = 0
-    output[0,1] = 0
+    output[0,O_TIME] = 0
+    output[0,O_DISTANCE] = 0
     gear = vehicle.best_gear(output_0[O_VELOCITY], output_0[O_FR_REMAINING])
 
   brake = False

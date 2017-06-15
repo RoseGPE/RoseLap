@@ -12,8 +12,6 @@ Options:
   --no_output   Don't display any plots.
 """
 
-
-from sim import *
 import study
 import meshconv
 import datetime
