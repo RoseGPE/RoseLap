@@ -1,4 +1,4 @@
-vehicle: rgp007.yaml
+vehicle: rgp007-turbo.yaml
 track:
 - acceleration.dxf
 - skidpad_loop.dxf

@@ -16,7 +16,8 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   v0 = prior_result[O_VELOCITY];
   x0 = prior_result[O_DISTANCE];
   t0 = prior_result[O_TIME];
-  status = S_TOPPED_OUT
+  status = S_TOPPED_OUT;
+  co2_elapsed = prior_result[O_CO2];
 
   Fdown = vehicle.alpha_downforce()*v0**2;
   Fdrag = vehicle.alpha_drag()*v0**2;
@@ -72,6 +73,9 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     tf = t0
   xf = x0 + segment.length
 
+  if not (brake or shifting):
+    co2_elapsed += segment.length*Fr_long*vehicle.co2_factor/vehicle.e_factor
+
   output = np.array([
     tf,
     xf,
@@ -86,7 +90,9 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     Ftire_remaining,
     0,
     segment.curvature,
-    eng_rpm
+    eng_rpm,
+
+    co2_elapsed
   ])
 
   return output

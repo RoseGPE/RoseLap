@@ -1,0 +1,38 @@
+vehicle: rgp007.yaml
+track:
+- acceleration.dxf
+#- ne_autocross_2015.dxf
+- ne_endurance_2015.dxf
+segment_distance:
+- 0.2
+#- 0.2
+- 0.2
+steady_state:
+- false
+#- false
+- false
+point_formulas:
+- acceleration
+#- autocross
+- endurance
+min_times:
+- 4.0
+#- 41.276
+- 60
+min_co2:
+- None
+#- None
+- 0.3594
+tests:
+- target: mass
+  operation: replace
+  test_vals:
+    range_start: 7.2
+    range_end: 10.2
+    range_step: 0.25
+
+plot_style: basic
+plot_title: Weight Study (Lincoln)
+plot_x_label: Car Mass (Slugs)
+plot_y_label: Track Time
+#plot_points: Null

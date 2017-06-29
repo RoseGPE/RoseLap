@@ -16,21 +16,21 @@ steady_state:
 - no
 
 tests:
-- target: final_drive_reduction
+- target: downforce_35mph
   operation: replace
   test_vals:
-    range_start: 2.25
-    range_end: 3.25
-    range_step: 0.1
+    range_start: 0
+    range_end: 80
+    range_step: 10
 tests2:
-- target: shift_time
+- target: drag_35mph
   operation: replace
   test_vals:
-    range_start: 0.02
-    range_end: 0.2
-    range_step: 0.01
+    range_start: 0
+    range_end: 40
+    range_step: 5
 
 plot_style: basic
 plot_title: Track Time
-plot_x_label: Final Drive Ratio
-plot_y_label: Shift Time
+plot_x_label: Downforce
+plot_y_label: Drag

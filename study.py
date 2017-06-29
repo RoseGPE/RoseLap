@@ -7,6 +7,7 @@ import track_segmentation
 import fancyyaml as yaml
 import cPickle as pickle
 import time
+import pointsim
 """
 Study Schema:
 vehicle: [string] filename for .json in the Vehicles directory
@@ -28,10 +29,11 @@ def load(filename):
 		return pickle.load(f)
 
 class StudyRecord:
-	def __init__(self, filename, study_text, timestamp_start, timestamp_end, output, times, segList, sobj, kind="2D"):
+	def __init__(self, filename, study_text, timestamp_start, timestamp_end, output, times, co2s, segList, sobj, kind="2D"):
 		self.filename=filename
 		self.study_text=study_text
 		self.output = output
+		self.co2s = co2s
 		self.times = times
 		self.segList = segList
 		self.sobj = sobj
@@ -53,7 +55,7 @@ class StudyRecord:
 
 		if self.kind == "2D":
 			fig, ax = plt.subplots()
-			fig.canvas.set_window_title('Study Results')
+			fig.canvas.set_window_title('Laptime Results')
 
 			# plot the study
 			for i, track in enumerate(self.track):
@@ -67,9 +69,47 @@ class StudyRecord:
 			ax.grid(True)
 			ax.legend()
 
-			plt.title(self.plot_title)
+			plt.title(self.plot_title+" (Laptimes)")
 			plt.xlabel(self.plot_x_label)
-			plt.ylabel(self.plot_y_label)
+			plt.ylabel("Laptime")
+
+
+			# interactivity, maybe
+			if len(self.tests) == 1:
+				print("we doin this")
+			details = DetailZoom(self, 0)
+			fig.canvas.mpl_connect('pick_event', details.onpick)
+			fig.canvas.show()
+
+
+			fig, ax = plt.subplots()
+			fig.canvas.set_window_title('Points For Each Track')
+			
+			print(self.plot_points)
+			# plot the study
+			pts_total = None
+			for i, track in enumerate(self.track):
+				title = self.track[i] + " (mesh size: " + str(self.segment_distance[i]) + ")" 
+
+				pts = pointsim.compute_points(self.point_formulas[i],self.min_times[i],self.min_co2[i],self.times[i],self.co2s[i])
+				if pts_total is None:
+					pts_total = pts
+				else:
+					pts_total += pts
+
+				if self.plot_style == "basic":
+					ax.plot(self.plot_points, pts, label=title, marker='x', linestyle='-', picker=5)
+				elif self.plot_style == "semilog":
+					ax.semilogx(self.plot_points, pts, label=title, marker='x', linestyle='-', picker=5)
+
+			ax.plot(self.plot_points, pts_total, label='Total Points', marker='x', linestyle='-', picker=5)
+
+			ax.grid(True)
+			ax.legend()
+
+			plt.title(self.plot_title+" (Points)")
+			plt.xlabel(self.plot_x_label)
+			plt.ylabel("Points")
 
 
 			# interactivity, maybe
@@ -80,6 +120,8 @@ class StudyRecord:
 			fig.canvas.show()
 
 			plt.show()
+
+
 
 		elif self.kind == "3D":
 			axes = []
@@ -199,6 +241,7 @@ def run(filename):
 
 		# set up some preliminary values
 		times = np.zeros((len(segList), num_xtests, num_ytests))
+		co2s = np.zeros((len(segList), num_xtests, num_ytests))
 
 		for seg_no in range(len(segList)):
 			print("\tTesting track " + str(seg_no + 1) + "...")
@@ -233,17 +276,19 @@ def run(filename):
 								vehicle.setVar(var2, test_vals2[test2_no])
 
 						# solve under the new conditions
-						if s_OBJ["steady_state"][seg_no] == True:
+						if s_OBJ["steady_state"][seg_no]:
+							#print('steady as she goes')
 							output.append(sim_pkg.steady_solve(vehicle.v, segList[seg_no]))
 						else:
 							output.append(sim_pkg.solve(vehicle.v, segList[seg_no]))
 						
 						times[seg_no, test_no, test2_no] = output[-1][-1, O_TIME]
+						co2s[seg_no, test_no, test2_no]  = output[-1][-1, O_CO2]
 
 						print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
 
 		print("Done!")
-		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, segList, s_OBJ, "3D")
+		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, co2s, segList, s_OBJ, "3D")
 
 	except KeyError as e: # run 2D test
 		print("Running tests...")
@@ -257,6 +302,7 @@ def run(filename):
 
 
 		times = np.zeros((len(segList), num_tests))
+		co2s = np.zeros((len(segList), num_tests))
 
 		# run 1D study
 		for seg_no in range(len(segList)):
@@ -276,13 +322,15 @@ def run(filename):
 						vehicle.setVar(var, test_vals[test_no])
 
 				# solve under the new conditions
-				if s_OBJ["steady_state"][seg_no] == True:
+				if s_OBJ["steady_state"][seg_no]:
+					#print('steady as she goes')
 					output.append(sim_pkg.steady_solve(vehicle.v, segList[seg_no]))
 				else:
 					output.append(sim_pkg.solve(vehicle.v, segList[seg_no]))
 				times[seg_no, test_no] = output[-1][-1, O_TIME]
+				co2s[seg_no, test_no] = output[-1][-1, O_CO2]
 
 				print("\t\tTest " + str(test_no + 1) + " complete!")
 				# plot_velocity_and_events(output[test_no], "time")
 
-		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, segList, s_OBJ)
+		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, co2s, segList, s_OBJ)

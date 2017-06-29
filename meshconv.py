@@ -15,7 +15,7 @@ def run(filename):
 
 	vehicle.load(mcstudy["vehicle"])
 
-	if not "model" in s_OBJ:
+	if not "model" in mcstudy:
 		mcstudy['model'] = 'twotires'
 	model = mcstudy['model']
 

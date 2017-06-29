@@ -24,7 +24,9 @@ O_FR_REMAINING = 11
 O_CURVATURE = 12
 O_ENG_RPM = 13
 
-O_MATRIX_COLS = 14
+O_CO2 = 14
+
+O_MATRIX_COLS = 15
 
 # Shifting status codes
 IN_PROGRESS = 0
