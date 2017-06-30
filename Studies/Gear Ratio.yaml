@@ -1,9 +1,16 @@
 vehicle: rgp007.yaml
+
 track:
 - acceleration.dxf
+- skidpad_loop.dxf
+- ne_autocross_2015.dxf
+- ne_endurance_2015.dxf
 - ne_autocross_2015.dxf
 - ne_endurance_2015.dxf
 segment_distance:
+- 0.2
+- 0.2
+- 0.2
 - 0.2
 - 0.2
 - 0.2
@@ -11,18 +18,32 @@ steady_state:
 - false
 - false
 - false
+- false
+- false
+- false
 point_formulas:
 - acceleration
+- skidpad
+- autocross
+- endurance
 - autocross
 - endurance
 min_times:
-- 4.0
-- 41.276
-- 60
+- 4.1
+- 4.8
+- 57.51
+- 90.24
+- 41.27
+- 55.76
 min_co2:
 - None
 - None
+- None
 - 0.3594
+- None
+- 0.2202
+
+
 tests:
 - target: final_drive_reduction
   operation: replace

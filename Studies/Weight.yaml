@@ -1,28 +1,48 @@
 vehicle: rgp007.yaml
+
 track:
 - acceleration.dxf
-#- ne_autocross_2015.dxf
+- skidpad_loop.dxf
+- ne_autocross_2015.dxf
 - ne_endurance_2015.dxf
+#- mi_autocross_2017.dxf
+#- mi_endurance_2017.dxf
 segment_distance:
 - 0.2
-#- 0.2
+- 0.2
+- 0.2
+- 0.2
+- 0.2
 - 0.2
 steady_state:
 - false
-#- false
+- false
+- false
+- false
+- false
 - false
 point_formulas:
 - acceleration
-#- autocross
+- skidpad
+- autocross
+- endurance
+- autocross
 - endurance
 min_times:
-- 4.0
-#- 41.276
-- 60
+- 4.1
+- 4.8
+- 57.51
+- 90.24
+- 41.27
+- 55.76
 min_co2:
 - None
-#- None
+- None
+- None
 - 0.3594
+- None
+- 0.2202
+
 tests:
 - target: mass
   operation: replace
