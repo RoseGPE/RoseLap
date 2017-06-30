@@ -124,12 +124,13 @@ class StudyRecord:
 
 
 		elif self.kind == "3D":
+			total_points = None
 			axes = []
 			details = []
 			for seg_no in range(len(self.segList)):
 				fig, ax = plt.subplots()
 				axes.append(ax)
-				fig.canvas.set_window_title('3D Study Results')
+				fig.canvas.set_window_title('3D Study Results (Times)')
 				# data setup
 				X1 = np.array(self.plot_x_points)
 				Y1 = np.array(self.plot_y_points)
@@ -137,7 +138,7 @@ class StudyRecord:
 				Z = np.transpose(self.times[seg_no])
 
 				# plotting shaded regions
-				CS = plt.contourf(X, Y, Z, 200, cmap="GnBu")
+				CS = plt.contourf(X, Y, Z, 200, cmap="plasma_r")
 				cbar = plt.colorbar(CS)
 
 				# plotting min track time
@@ -157,7 +158,7 @@ class StudyRecord:
 				plt.yticks(Y1)
 				plt.grid(True)
 
-				plt.title(self.plot_title + " on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
+				plt.title(self.plot_title + " (Times) on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
 				plt.xlabel(self.plot_x_label)
 				plt.ylabel(self.plot_y_label)
 
@@ -170,6 +171,103 @@ class StudyRecord:
 				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
 
 				fig.canvas.show()
+
+
+				fig, ax = plt.subplots()
+				axes.append(ax)
+				fig.canvas.set_window_title('3D Study Results (Points)')
+				# data setup
+				X1 = np.array(self.plot_x_points)
+				Y1 = np.array(self.plot_y_points)
+				X, Y = np.meshgrid(X1, Y1)
+				Z = np.transpose(pointsim.compute_points(self.point_formulas[seg_no],self.min_times[seg_no],self.min_co2[seg_no],self.times[seg_no],self.co2s[seg_no]))
+				if total_points is None:
+					total_points = Z
+				else:
+					total_points += Z
+
+				# plotting shaded regions
+				CS = plt.contourf(X, Y, Z, 200, cmap="viridis")
+				cbar = plt.colorbar(CS)
+
+				# plotting min track time
+				minval = Z.max()
+				itemindex = np.where(Z==minval)
+				ys, xs = itemindex
+				maxx = X1[xs[0]]
+				maxy = Y1[ys[0]]
+
+				plt.scatter(X, Y, marker="x", label="Details", picker=20)
+				plt.scatter(maxx, maxy, marker="o", s=20, label="Max Points", zorder=10, picker=5)
+
+				# adding labels + legibility
+				plt.legend()
+
+				plt.xticks(X1)
+				plt.yticks(Y1)
+				plt.grid(True)
+
+				plt.title(self.plot_title + " (Points) on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
+				plt.xlabel(self.plot_x_label)
+				plt.ylabel(self.plot_y_label)
+
+				# interactivity, maybe
+				# if len(self.tests) == 1:
+					#print("we doin this")
+				
+
+				details.append(DetailZoom(self, seg_no))
+				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
+
+				fig.canvas.show()
+
+
+
+			fig, ax = plt.subplots()
+			axes.append(ax)
+			fig.canvas.set_window_title('3D Study Results (Overall Points)')
+			# data setup
+			X1 = np.array(self.plot_x_points)
+			Y1 = np.array(self.plot_y_points)
+			X, Y = np.meshgrid(X1, Y1)
+			Z = total_points
+
+			# plotting shaded regions
+			CS = plt.contourf(X, Y, Z, 200, cmap="viridis")
+			cbar = plt.colorbar(CS)
+
+			# plotting min track time
+			minval = Z.max()
+			itemindex = np.where(Z==minval)
+			ys, xs = itemindex
+			maxx = X1[xs[0]]
+			maxy = Y1[ys[0]]
+
+			plt.scatter(X, Y, marker="x", label="Details", picker=20)
+			plt.scatter(maxx, maxy, marker="o", s=20, label="Max Points", zorder=10, picker=5)
+
+			# adding labels + legibility
+			plt.legend()
+
+			plt.xticks(X1)
+			plt.yticks(Y1)
+			plt.grid(True)
+
+			plt.title(self.plot_title + " (Points) on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
+			plt.xlabel(self.plot_x_label)
+			plt.ylabel(self.plot_y_label)
+
+			# interactivity, maybe
+			# if len(self.tests) == 1:
+				#print("we doin this")
+			
+
+			details.append(DetailZoom(self, seg_no))
+			fig.canvas.mpl_connect('pick_event', details[-1].onpick)
+
+			fig.canvas.show()
+
+
 
 			plt.show()
 		else:

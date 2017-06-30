@@ -1,0 +1,65 @@
+vehicle: rgp007.yaml
+
+track:
+- acceleration.dxf
+- skidpad_loop.dxf
+#- ne_autocross_2015.dxf
+#- ne_endurance_2015.dxf
+#- mi_autocross_2017.dxf
+#- mi_endurance_2017.dxf
+segment_distance:
+- 0.2
+- 0.2
+- 0.2
+- 0.2
+- 0.2
+- 0.2
+steady_state:
+- false
+- false
+- false
+- false
+- false
+- false
+point_formulas:
+- acceleration
+- skidpad
+- autocross
+- endurance
+- autocross
+- endurance
+min_times:
+- 4.1
+- 4.8
+- 57.51
+- 90.24
+- 41.27
+- 55.76
+min_co2:
+- None
+- None
+- None
+- 0.3594
+- None
+- 0.2202
+
+tests:
+- target: mass
+  operation: replace
+  test_vals:
+    range_start: 7.2
+    range_end: 10.2
+    range_step: 0.5
+tests2:
+- target: downforce_35mph
+  operation: replace
+  test_vals:
+    range_start: 0
+    range_end: 80
+    range_step: 10
+
+plot_style: basic
+plot_title: Weight/Downforce Study (Lincoln)
+plot_x_label: Car Mass (Slugs)
+plot_y_label: Downforce @35 mph (lbf)
+#plot_points: Null
