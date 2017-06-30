@@ -29,11 +29,12 @@ def load(filename):
 		return pickle.load(f)
 
 class StudyRecord:
-	def __init__(self, filename, study_text, timestamp_start, timestamp_end, output, times, co2s, segList, sobj, kind="2D"):
+	def __init__(self, filename, study_text, timestamp_start, timestamp_end, output, times, co2s, lat_accels, segList, sobj, kind="2D"):
 		self.filename=filename
 		self.study_text=study_text
 		self.output = output
 		self.co2s = co2s
+		self.lat_accels = lat_accels
 		self.times = times
 		self.segList = segList
 		self.sobj = sobj
@@ -54,70 +55,99 @@ class StudyRecord:
 		print("Plotting results...")
 
 		if self.kind == "2D":
-			fig, ax = plt.subplots()
-			fig.canvas.set_window_title('Laptime Results')
+			if 'time' in self.plot_outputs:
+				fig, ax = plt.subplots()
+				fig.canvas.set_window_title('Laptime Results')
 
-			# plot the study
-			for i, track in enumerate(self.track):
-				title = self.track[i] + " (mesh size: " + str(self.segment_distance[i]) + ")" 
+				# plot the study
+				for i, track in enumerate(self.track):
+					title = self.track[i] + " (mesh size: " + str(self.segment_distance[i]) + ")" 
 
-				if self.plot_style == "basic":
-					ax.plot(self.plot_points, self.times[i], label=title, marker='x', linestyle='-', picker=5)
-				elif self.plot_style == "semilog":
-					ax.semilogx(self.plot_points, self.times[i], label=title, marker='x', linestyle='-', picker=5)
+					if self.plot_style == "basic":
+						ax.plot(self.plot_points, self.times[i], label=title, marker='x', linestyle='-', picker=5)
+					elif self.plot_style == "semilog":
+						ax.semilogx(self.plot_points, self.times[i], label=title, marker='x', linestyle='-', picker=5)
 
-			ax.grid(True)
-			ax.legend()
+				ax.grid(True)
+				ax.legend()
 
-			plt.title(self.plot_title+" (Laptimes)")
-			plt.xlabel(self.plot_x_label)
-			plt.ylabel("Laptime")
-
-
-			# interactivity, maybe
-			if len(self.tests) == 1:
-				print("we doin this")
-			details = DetailZoom(self, 0)
-			fig.canvas.mpl_connect('pick_event', details.onpick)
-			fig.canvas.show()
+				plt.title(self.plot_title+" (Laptimes)")
+				plt.xlabel(self.plot_x_label)
+				plt.ylabel("Laptime")
 
 
-			fig, ax = plt.subplots()
-			fig.canvas.set_window_title('Points For Each Track')
-			
-			print(self.plot_points)
-			# plot the study
-			pts_total = None
-			for i, track in enumerate(self.track):
-				title = self.track[i] + " (mesh size: " + str(self.segment_distance[i]) + ")" 
+				# interactivity, maybe
+				if len(self.tests) == 1:
+					print("we doin this")
+				details = DetailZoom(self, 0)
+				fig.canvas.mpl_connect('pick_event', details.onpick)
+				fig.canvas.show()
 
-				pts = pointsim.compute_points(self.point_formulas[i],self.min_times[i],self.min_co2[i],self.times[i],self.co2s[i])
-				if pts_total is None:
-					pts_total = pts
-				else:
-					pts_total += pts
+			if 'lateral_acceleration' in self.plot_outputs:
+				fig, ax = plt.subplots()
+				fig.canvas.set_window_title('Lat. Accel Results')
 
-				if self.plot_style == "basic":
-					ax.plot(self.plot_points, pts, label=title, marker='x', linestyle='-', picker=5)
-				elif self.plot_style == "semilog":
-					ax.semilogx(self.plot_points, pts, label=title, marker='x', linestyle='-', picker=5)
+				# plot the study
+				for i, track in enumerate(self.track):
+					title = self.track[i] + " (mesh size: " + str(self.segment_distance[i]) + ")" 
 
-			ax.plot(self.plot_points, pts_total, label='Total Points', marker='x', linestyle='-', picker=5)
+					if self.plot_style == "basic":
+						ax.plot(self.plot_points, self.lat_accels[i], label=title, marker='x', linestyle='-', picker=5)
+					elif self.plot_style == "semilog":
+						ax.semilogx(self.plot_points, self.lat_accels[i], label=title, marker='x', linestyle='-', picker=5)
 
-			ax.grid(True)
-			ax.legend()
+				ax.grid(True)
+				ax.legend()
 
-			plt.title(self.plot_title+" (Points)")
-			plt.xlabel(self.plot_x_label)
-			plt.ylabel("Points")
+				plt.title(self.plot_title+" (Lat. Accel)")
+				plt.xlabel(self.plot_x_label)
+				plt.ylabel("Lateral Acceleration (G's)")
 
 
-			# interactivity, maybe
-			if len(self.tests) == 1:
-				print("we doin this")
-			details = DetailZoom(self, 0)
-			fig.canvas.mpl_connect('pick_event', details.onpick)
-			fig.canvas.show()
+				# interactivity, maybe
+				if len(self.tests) == 1:
+					print("we doin this")
+				details = DetailZoom(self, 0)
+				fig.canvas.mpl_connect('pick_event', details.onpick)
+				fig.canvas.show()
+
+			if 'points' in self.plot_outputs:
+				fig, ax = plt.subplots()
+				fig.canvas.set_window_title('Points For Each Track')
+				
+				print(self.plot_points)
+				# plot the study
+				pts_total = None
+				for i, track in enumerate(self.track):
+					title = self.track[i] + " (mesh size: " + str(self.segment_distance[i]) + ")" 
+
+					pts = pointsim.compute_points(self.point_formulas[i],self.min_times[i],self.min_co2[i],self.times[i],self.co2s[i])
+					if pts_total is None:
+						pts_total = pts
+					else:
+						pts_total += pts
+
+					if self.plot_style == "basic":
+						ax.plot(self.plot_points, pts, label=title, marker='x', linestyle='-', picker=5)
+					elif self.plot_style == "semilog":
+						ax.semilogx(self.plot_points, pts, label=title, marker='x', linestyle='-', picker=5)
+
+				ax.plot(self.plot_points, pts_total, label='Total Points', marker='x', linestyle='-', picker=5)
+
+				ax.grid(True)
+				ax.legend()
+
+				plt.title(self.plot_title+" (Points)")
+				plt.xlabel(self.plot_x_label)
+				plt.ylabel("Points")
+
+
+				# interactivity, maybe
+				if len(self.tests) == 1:
+					print("we doin this")
+				details = DetailZoom(self, 0)
+				fig.canvas.mpl_connect('pick_event', details.onpick)
+				fig.canvas.show()
 
 			plt.show()
 
@@ -128,63 +158,155 @@ class StudyRecord:
 			axes = []
 			details = []
 			for seg_no in range(len(self.segList)):
+				if 'time' in self.plot_outputs:
+					fig, ax = plt.subplots()
+					axes.append(ax)
+					fig.canvas.set_window_title('3D Study Results (Times)')
+					# data setup
+					X1 = np.array(self.plot_x_points)
+					Y1 = np.array(self.plot_y_points)
+					X, Y = np.meshgrid(X1, Y1)
+					Z = np.transpose(self.times[seg_no])
+
+					# plotting shaded regions
+					CS = plt.contourf(X, Y, Z, 200, cmap="plasma_r")
+					cbar = plt.colorbar(CS)
+
+					# plotting min track time
+					minval = Z.min()
+					itemindex = np.where(Z==minval)
+					ys, xs = itemindex
+					minx = X1[xs[0]]
+					miny = Y1[ys[0]]
+
+					plt.scatter(X, Y, marker="x", label="Details", picker=20)
+					plt.scatter(minx, miny, marker="o", s=20, label="Min Track Time", zorder=10, picker=5)
+
+					# adding labels + legibility
+					plt.legend()
+
+					plt.xticks(X1)
+					plt.yticks(Y1)
+					plt.grid(True)
+
+					plt.title(self.plot_title + " (Times) on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
+					plt.xlabel(self.plot_x_label)
+					plt.ylabel(self.plot_y_label)
+
+					# interactivity, maybe
+					# if len(self.tests) == 1:
+						#print("we doin this")
+					
+
+					details.append(DetailZoom(self, seg_no))
+					fig.canvas.mpl_connect('pick_event', details[-1].onpick)
+
+					fig.canvas.show()
+
+				if 'points' in self.plot_outputs:
+					fig, ax = plt.subplots()
+					axes.append(ax)
+					fig.canvas.set_window_title('3D Study Results (Points)')
+					# data setup
+					X1 = np.array(self.plot_x_points)
+					Y1 = np.array(self.plot_y_points)
+					X, Y = np.meshgrid(X1, Y1)
+					Z = np.transpose(pointsim.compute_points(self.point_formulas[seg_no],self.min_times[seg_no],self.min_co2[seg_no],self.times[seg_no],self.co2s[seg_no]))
+					if total_points is None:
+						total_points = Z
+					else:
+						total_points += Z
+
+					# plotting shaded regions
+					CS = plt.contourf(X, Y, Z, 200, cmap="viridis")
+					cbar = plt.colorbar(CS)
+
+					# plotting min track time
+					minval = Z.max()
+					itemindex = np.where(Z==minval)
+					ys, xs = itemindex
+					maxx = X1[xs[0]]
+					maxy = Y1[ys[0]]
+
+					plt.scatter(X, Y, marker="x", label="Details", picker=20)
+					plt.scatter(maxx, maxy, marker="o", s=20, label="Max Points", zorder=10, picker=5)
+
+					# adding labels + legibility
+					plt.legend()
+
+					plt.xticks(X1)
+					plt.yticks(Y1)
+					plt.grid(True)
+
+					plt.title(self.plot_title + " (Points) on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
+					plt.xlabel(self.plot_x_label)
+					plt.ylabel(self.plot_y_label)
+
+					# interactivity, maybe
+					# if len(self.tests) == 1:
+						#print("we doin this")
+					
+
+					details.append(DetailZoom(self, seg_no))
+					fig.canvas.mpl_connect('pick_event', details[-1].onpick)
+
+					fig.canvas.show()
+
+				if 'lateral_acceleration' in self.plot_outputs:
+					fig, ax = plt.subplots()
+					axes.append(ax)
+					fig.canvas.set_window_title('3D Study Results (Lat. Accel.)')
+					# data setup
+					X1 = np.array(self.plot_x_points)
+					Y1 = np.array(self.plot_y_points)
+					X, Y = np.meshgrid(X1, Y1)
+					Z = np.transpose(self.lat_accels[seg_no])
+
+					# plotting shaded regions
+					CS = plt.contourf(X, Y, Z, 200, cmap="inferno")
+					cbar = plt.colorbar(CS)
+
+					# plotting min track time
+					minval = Z.max()
+					itemindex = np.where(Z==minval)
+					ys, xs = itemindex
+					maxx = X1[xs[0]]
+					maxy = Y1[ys[0]]
+
+					plt.scatter(X, Y, marker="x", label="Details", picker=20)
+					plt.scatter(maxx, maxy, marker="o", s=20, label="Max Points", zorder=10, picker=5)
+
+					# adding labels + legibility
+					plt.legend()
+
+					plt.xticks(X1)
+					plt.yticks(Y1)
+					plt.grid(True)
+
+					plt.title(self.plot_title + " (Lat. Accel.) on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
+					plt.xlabel(self.plot_x_label)
+					plt.ylabel(self.plot_y_label)
+
+					# interactivity, maybe
+					# if len(self.tests) == 1:
+						#print("we doin this")
+					
+
+					details.append(DetailZoom(self, seg_no))
+					fig.canvas.mpl_connect('pick_event', details[-1].onpick)
+
+					fig.canvas.show()
+
+
+			if 'points' in self.plot_outputs:
 				fig, ax = plt.subplots()
 				axes.append(ax)
-				fig.canvas.set_window_title('3D Study Results (Times)')
+				fig.canvas.set_window_title('3D Study Results (Overall Points)')
 				# data setup
 				X1 = np.array(self.plot_x_points)
 				Y1 = np.array(self.plot_y_points)
 				X, Y = np.meshgrid(X1, Y1)
-				Z = np.transpose(self.times[seg_no])
-
-				# plotting shaded regions
-				CS = plt.contourf(X, Y, Z, 200, cmap="plasma_r")
-				cbar = plt.colorbar(CS)
-
-				# plotting min track time
-				minval = Z.min()
-				itemindex = np.where(Z==minval)
-				ys, xs = itemindex
-				minx = X1[xs[0]]
-				miny = Y1[ys[0]]
-
-				plt.scatter(X, Y, marker="x", label="Details", picker=20)
-				plt.scatter(minx, miny, marker="o", s=20, label="Min Track Time", zorder=10, picker=5)
-
-				# adding labels + legibility
-				plt.legend()
-
-				plt.xticks(X1)
-				plt.yticks(Y1)
-				plt.grid(True)
-
-				plt.title(self.plot_title + " (Times) on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
-				plt.xlabel(self.plot_x_label)
-				plt.ylabel(self.plot_y_label)
-
-				# interactivity, maybe
-				# if len(self.tests) == 1:
-					#print("we doin this")
-				
-
-				details.append(DetailZoom(self, seg_no))
-				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
-
-				fig.canvas.show()
-
-
-				fig, ax = plt.subplots()
-				axes.append(ax)
-				fig.canvas.set_window_title('3D Study Results (Points)')
-				# data setup
-				X1 = np.array(self.plot_x_points)
-				Y1 = np.array(self.plot_y_points)
-				X, Y = np.meshgrid(X1, Y1)
-				Z = np.transpose(pointsim.compute_points(self.point_formulas[seg_no],self.min_times[seg_no],self.min_co2[seg_no],self.times[seg_no],self.co2s[seg_no]))
-				if total_points is None:
-					total_points = Z
-				else:
-					total_points += Z
+				Z = total_points
 
 				# plotting shaded regions
 				CS = plt.contourf(X, Y, Z, 200, cmap="viridis")
@@ -220,52 +342,6 @@ class StudyRecord:
 				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
 
 				fig.canvas.show()
-
-
-
-			fig, ax = plt.subplots()
-			axes.append(ax)
-			fig.canvas.set_window_title('3D Study Results (Overall Points)')
-			# data setup
-			X1 = np.array(self.plot_x_points)
-			Y1 = np.array(self.plot_y_points)
-			X, Y = np.meshgrid(X1, Y1)
-			Z = total_points
-
-			# plotting shaded regions
-			CS = plt.contourf(X, Y, Z, 200, cmap="viridis")
-			cbar = plt.colorbar(CS)
-
-			# plotting min track time
-			minval = Z.max()
-			itemindex = np.where(Z==minval)
-			ys, xs = itemindex
-			maxx = X1[xs[0]]
-			maxy = Y1[ys[0]]
-
-			plt.scatter(X, Y, marker="x", label="Details", picker=20)
-			plt.scatter(maxx, maxy, marker="o", s=20, label="Max Points", zorder=10, picker=5)
-
-			# adding labels + legibility
-			plt.legend()
-
-			plt.xticks(X1)
-			plt.yticks(Y1)
-			plt.grid(True)
-
-			plt.title(self.plot_title + " (Points) on " + self.track[seg_no] + " (mesh size: " + str(self.segment_distance[seg_no]) + ")" )
-			plt.xlabel(self.plot_x_label)
-			plt.ylabel(self.plot_y_label)
-
-			# interactivity, maybe
-			# if len(self.tests) == 1:
-				#print("we doin this")
-			
-
-			details.append(DetailZoom(self, seg_no))
-			fig.canvas.mpl_connect('pick_event', details[-1].onpick)
-
-			fig.canvas.show()
 
 
 
@@ -340,6 +416,7 @@ def run(filename):
 		# set up some preliminary values
 		times = np.zeros((len(segList), num_xtests, num_ytests))
 		co2s = np.zeros((len(segList), num_xtests, num_ytests))
+		lat_accels = np.zeros((len(segList), num_xtests, num_ytests))
 
 		for seg_no in range(len(segList)):
 			print("\tTesting track " + str(seg_no + 1) + "...")
@@ -382,11 +459,12 @@ def run(filename):
 						
 						times[seg_no, test_no, test2_no] = output[-1][-1, O_TIME]
 						co2s[seg_no, test_no, test2_no]  = output[-1][-1, O_CO2]
+						lat_accels[seg_no, test_no, test2_no] = output[-1][-1, O_LAT_ACC]
 
 						print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
 
 		print("Done!")
-		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, co2s, segList, s_OBJ, "3D")
+		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, co2s, lat_accels, segList, s_OBJ, "3D")
 
 	except KeyError as e: # run 2D test
 		print("Running tests...")
@@ -401,6 +479,8 @@ def run(filename):
 
 		times = np.zeros((len(segList), num_tests))
 		co2s = np.zeros((len(segList), num_tests))
+
+		lat_accels = np.zeros((len(segList), num_tests))
 
 		# run 1D study
 		for seg_no in range(len(segList)):
@@ -427,8 +507,10 @@ def run(filename):
 					output.append(sim_pkg.solve(vehicle.v, segList[seg_no]))
 				times[seg_no, test_no] = output[-1][-1, O_TIME]
 				co2s[seg_no, test_no] = output[-1][-1, O_CO2]
+				lat_accels[seg_no, test_no] = output[-1][-1, O_LAT_ACC]
+				
 
 				print("\t\tTest " + str(test_no + 1) + " complete!")
 				# plot_velocity_and_events(output[test_no], "time")
 
-		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, co2s, segList, s_OBJ)
+		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, co2s, lat_accels, segList, s_OBJ)
