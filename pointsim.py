@@ -6,9 +6,12 @@ def compute_points(event_name, best_time, best_co2, times, co2s):
 	if event_name == 'autocross':
 		return 118.5*(best_time*1.45/times - 1)/(1.45-1) + 6.5
 	if event_name == 'endurance':
+		score_end= 250*(best_time*1.45/times - 1)/(1.45-1) + 25
+		return score_end+score_eff
+	if event_name == 'endurance_noeff':
 		EFi = best_time/times*best_co2/co2s
 		EFmin = .25 # TODO? close enough
 		EFmax = .80 # TODO? close enough
 		score_end= 250*(best_time*1.45/times - 1)/(1.45-1) + 25
 		score_eff= 100*(EFmin/EFi-1)/(EFmin/EFmax-1)
-		return score_end+score_eff
+		return score_end
