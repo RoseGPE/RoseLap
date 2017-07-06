@@ -20,7 +20,7 @@ cg_height: 0.8
 
 
 # VARIABLE: this should be studied to determine a good value and then stick with it
-brake_bias: 0.5
+brake_bias: 0.67
 perfect_brake_bias: false
 # FIXME: not sure if right
 weight_bias: 0.55
