@@ -47,9 +47,9 @@ tests:
 - target: mass
   operation: replace
   test_vals:
-    range_start: 7.2
-    range_end: 10.2
-    range_step: 0.25
+    range_start: 250
+    range_end: 400
+    range_step: 10
 
 plot_style: basic
 plot_title: Weight Study (Lincoln)

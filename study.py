@@ -459,7 +459,7 @@ def run(filename):
 						
 						times[seg_no, test_no, test2_no] = output[-1][-1, O_TIME]
 						co2s[seg_no, test_no, test2_no]  = output[-1][-1, O_CO2]
-						lat_accels[seg_no, test_no, test2_no] = output[-1][-1, O_LAT_ACC]
+						lat_accels[seg_no, test_no, test2_no] = output[-1][-2, O_LAT_ACC]
 
 						print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
 
@@ -507,7 +507,7 @@ def run(filename):
 					output.append(sim_pkg.solve(vehicle.v, segList[seg_no]))
 				times[seg_no, test_no] = output[-1][-1, O_TIME]
 				co2s[seg_no, test_no] = output[-1][-1, O_CO2]
-				lat_accels[seg_no, test_no] = output[-1][-1, O_LAT_ACC]
+				lat_accels[seg_no, test_no] = output[-1][-2, O_LAT_ACC]
 				
 
 				print("\t\tTest " + str(test_no + 1) + " complete!")

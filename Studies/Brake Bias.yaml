@@ -1,34 +1,79 @@
-# Brake Bias
+# Template / example for how to set up a study.
 
 vehicle: rgp007.yaml
+
+#### TRACK SETUP ####
+
+# List of tracks to load
 track:
-- ne_autocross_2013.dxf
 - ne_autocross_2015.dxf
+- ne_endurance_2015.dxf
+# Segment size to use on each track (0.2 is a pretty good size)
 segment_distance:
-- 0.15
-- 0.15
+- 0.2
+- 0.2
+# Whether or not to use 'steady state' solving (slows down simulation)
 steady_state:
-- no
-- no
+- false
+- false
+# What type of event each track is (for point formulation)
+point_formulas:
+- autocross
+- endurance_noeff # you can use endurance_noeff to disable efficiency scoring
+# Top times on each track (just need a ballpark, really. Point formulas are non-linear technically but they're pretty close to it)
+min_times:
+- 57.51
+- 90.24
+# CO2 usage, for computing efficiency score in the endurance event. Don't need to give a value if you aren't using it.
+min_co2:
+- None
+- 0.3594
+
+# Tests. This is a 3D setup. To do a 2D setup, simply omit tests2.
 tests:
 - target: brake_bias
   operation: replace
-  test_vals:
-  - 0.1
-  - 0.3
-  - 0.5
-  - 0.6
-  - 0.7
-  - 0.75
-  - 0.8
-  - 0.825
-  - 0.85
-  - 0.875
-  - 0.9
-  - 0.925
-  - 0.95
+  test_vals: # test_vals is a list of values.
+    - 0
+    - 0.14
+    - 0.17
+    - 0.2
+    - 0.3
+    - 0.4
+    - 0.5
+    - 0.6
+    - 0.63
+    - 0.67
+    - 0.7
+    - 0.73
+    - 0.77
+    - 0.8
+- target: perfect_brake_bias
+  operation: replace
+  test_vals: # test_vals is a list of values.
+    - true
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+
+# what outputs do you want? There is laptime, lateral acceleration (at end of track; included for correlation study), and competition points.
+plot_outputs:
+- time
+- points
+
+# plotting parameters
 plot_style: basic
-plot_title: Track Time
-plot_x_label: Brake Bias
-plot_y_label: Track Time
-#plot_points: Null
+plot_title: Brake Bias Study (Lincoln)
+plot_x_label: Brake Bias (0 is actually dynamic biasing)
+plot_y_label: YAXIS
+#plot_points: Null # if you specify this it must be as big as there are test values.

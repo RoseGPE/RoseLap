@@ -1,0 +1,76 @@
+# completely up to date. good template for sims.
+
+vehicle: rgp007.yaml
+
+track:
+- acceleration.dxf
+- skidpad_loop.dxf
+# - ne_autocross_2015.dxf
+# - ne_endurance_2015.dxf
+- mi_autocross_2017.dxf
+- mi_endurance_2017.dxf
+segment_distance:
+- 0.1
+- 0.2
+- 0.2
+- 0.2
+- 0.2
+- 0.2
+steady_state:
+- false
+- false
+- false
+- false
+- false
+- false
+point_formulas:
+- acceleration
+- skidpad
+- autocross
+- endurance
+- autocross
+- endurance
+min_times:
+- 4.1
+- 4.8
+# - 57.51
+# - 90.24
+- 41.27
+- 55.76
+min_co2:
+- None
+- None
+# - None
+# - 0.3594
+- None
+- 0.2202
+
+tests:
+- target: mass
+  operation: replace
+  test_vals:
+    - 550
+    - 580
+- target: engine_torque
+  operation: replace
+  test_vals:
+    - [24.3, 26.2, 27.4, 26.5, 25.5, 23.8, 23.9]
+    - [24.3, 26.2, 27.4, 44.6, 40.8, 39.1, 34.9]
+# - target: e_factor
+#   operation: replace
+#   test_vals:
+#     - 2271700
+#     - 2385285 #2385285 for a 5% efficiency boost
+
+plot_outputs:
+- time
+- points
+
+plot_style: basic
+plot_title: Turbocharger Study (Lincoln)
+plot_x_label: Car Configuration (1=NA, 2=Turbo)
+plot_y_label: Downforce @35 mph (lbf)
+plot_points:
+  - 1
+  - 2
+#plot_points: Null

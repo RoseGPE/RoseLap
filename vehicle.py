@@ -83,6 +83,8 @@ def getOriginalVal(name):
   return v.v_OBJ[name]
 
 def setVar(name, val):
+  if name == 'mass':
+    val /= g
   exec("v." + name + " = " + str(val)) # jank in preparation for even better code structure
 
 

@@ -42,9 +42,13 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
   if brake:
     status = S_BRAKING
-    F_brake = min(Ff_remaining/vehicle.front_brake_bias(), Fr_remaining/vehicle.rear_brake_bias())
-    Fr_long = -F_brake*vehicle.rear_brake_bias()
-    Ff_long = -F_brake*vehicle.front_brake_bias()
+    if vehicle.perfect_brake_bias:
+      Fr_long = -Fr_remaining
+      Ff_long = -Ff_remaining
+    else:
+      F_brake = min(Ff_remaining/vehicle.front_brake_bias(), Fr_remaining/vehicle.rear_brake_bias())
+      Fr_long = -F_brake*vehicle.rear_brake_bias()
+      Ff_long = -F_brake*vehicle.front_brake_bias()
     # Fr_long = -Fr_remaining
     # Ff_long = -Ff_remaining
     gear = np.nan
@@ -132,8 +136,12 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
       status = S_TIRE_LIM_ACC
     elif brake:
       F_brake = -a_long*vehicle.mass-Fdrag
-      Fr_long = -F_brake*vehicle.rear_brake_bias()
-      Ff_long = -F_brake*vehicle.front_brake_bias()
+      if vehicle.perfect_brake_bias:
+        Fr_long = -F_brake*Fr_remaining/(Ff_remaining+Fr_remaining)
+        Ff_long = -F_brake*Ff_remaining/(Ff_remaining+Fr_remaining)
+      else:
+        Fr_long = -F_brake*vehicle.rear_brake_bias()
+        Ff_long = -F_brake*vehicle.front_brake_bias()
 
 
     n+=1

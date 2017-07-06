@@ -21,6 +21,7 @@ weight_bias: 0.55
 wheelbase_length: 5.1666667
 
 brake_bias: 0.5
+perfect_brake_bias: false
 
 # Torque curve. This will be linearly interpolated and rev-limited to the highest RPM value.
 engine_rpms:
