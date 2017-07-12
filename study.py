@@ -8,6 +8,7 @@ import fancyyaml as yaml
 import cPickle as pickle
 import time
 import pointsim
+
 """
 Study Schema:
 vehicle: [string] filename for .json in the Vehicles directory
