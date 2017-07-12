@@ -1,7 +1,7 @@
 # rgp007
 # units are lbf, ft, s
 # _bias values are calculated as fractions from the front of the vehicle.
-# updated 7/3/2017
+# updated 7/10/2017
 
 # FIXME aero values are wrong, pls fix
 downforce_35mph: 61.0
@@ -13,7 +13,7 @@ cp_bias: 0.6
 mu: 1.5
 tire_radius: 0.75
 
-# CORRECT: 350 lb car and 200 lb driver
+# CORRECT: 370 lb car and 180 lb driver
 mass: 550
 # FIXME: No idea if ballpark. Also VARIABLE
 cg_height: 0.8
@@ -21,7 +21,7 @@ cg_height: 0.8
 
 # VARIABLE: this should be studied to determine a good value and then stick with it
 brake_bias: 0.67
-perfect_brake_bias: false
+perfect_brake_bias: true
 # FIXME: not sure if right
 weight_bias: 0.55
 # CORRECT: not sure if this is VARIABLE though

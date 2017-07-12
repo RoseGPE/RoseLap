@@ -74,7 +74,7 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   xf = x0 + segment.length
 
   if not (brake or shifting):
-    co2_elapsed += segment.length*Fr_long*vehicle.co2_factor/vehicle.e_factor
+    co2_elapsed += segment.length*F_longitudinal*vehicle.co2_factor/vehicle.e_factor
 
   output = np.array([
     tf,

@@ -14,4 +14,4 @@ def compute_points(event_name, best_time, best_co2, times, co2s):
 		EFmax = .80 # TODO? close enough
 		score_end= 250*(best_time*1.45/times - 1)/(1.45-1) + 25
 		score_eff= 100*(EFmin/EFi-1)/(EFmin/EFmax-1)
-		return score_end+score_eff
+		return score_end #+score_eff

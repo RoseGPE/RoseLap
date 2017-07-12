@@ -55,6 +55,7 @@ class StudyRecord:
 		print("Plotting results...")
 
 		if self.kind == "2D":
+			details = []
 			if 'time' in self.plot_outputs:
 				fig, ax = plt.subplots()
 				fig.canvas.set_window_title('Laptime Results')
@@ -79,8 +80,8 @@ class StudyRecord:
 				# interactivity, maybe
 				if len(self.tests) == 1:
 					print("we doin this")
-				details = DetailZoom(self, 0)
-				fig.canvas.mpl_connect('pick_event', details.onpick)
+				details.append(DetailZoom(self, 0))
+				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
 				fig.canvas.show()
 
 			if 'lateral_acceleration' in self.plot_outputs:
@@ -107,8 +108,8 @@ class StudyRecord:
 				# interactivity, maybe
 				if len(self.tests) == 1:
 					print("we doin this")
-				details = DetailZoom(self, 0)
-				fig.canvas.mpl_connect('pick_event', details.onpick)
+				details.append(DetailZoom(self, 0))
+				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
 				fig.canvas.show()
 
 			if 'points' in self.plot_outputs:
@@ -145,8 +146,8 @@ class StudyRecord:
 				# interactivity, maybe
 				if len(self.tests) == 1:
 					print("we doin this")
-				details = DetailZoom(self, 0)
-				fig.canvas.mpl_connect('pick_event', details.onpick)
+				details.append(DetailZoom(self, 0))
+				fig.canvas.mpl_connect('pick_event', details[-1].onpick)
 				fig.canvas.show()
 
 			plt.show()
@@ -157,6 +158,8 @@ class StudyRecord:
 			total_points = None
 			axes = []
 			details = []
+			N_CONTOURS = 15
+			MARKER = "None"
 			for seg_no in range(len(self.segList)):
 				if 'time' in self.plot_outputs:
 					fig, ax = plt.subplots()
@@ -169,8 +172,10 @@ class StudyRecord:
 					Z = np.transpose(self.times[seg_no])
 
 					# plotting shaded regions
-					CS = plt.contourf(X, Y, Z, 200, cmap="plasma_r")
-					cbar = plt.colorbar(CS)
+					CS = plt.contour(X, Y, Z, N_CONTOURS, colors='k')
+					plt.clabel(CS, fontsize=9, inline=1)
+					CS2 = plt.contourf(X, Y, Z, 100, cmap="plasma_r")
+					cbar = plt.colorbar(CS2)
 
 					# plotting min track time
 					minval = Z.min()
@@ -179,7 +184,7 @@ class StudyRecord:
 					minx = X1[xs[0]]
 					miny = Y1[ys[0]]
 
-					plt.scatter(X, Y, marker="x", label="Details", picker=20)
+					plt.scatter(X, Y, marker=MARKER, label="Details", picker=20)
 					plt.scatter(minx, miny, marker="o", s=20, label="Min Track Time", zorder=10, picker=5)
 
 					# adding labels + legibility
@@ -218,8 +223,10 @@ class StudyRecord:
 						total_points += Z
 
 					# plotting shaded regions
-					CS = plt.contourf(X, Y, Z, 200, cmap="viridis")
-					cbar = plt.colorbar(CS)
+					CS = plt.contour(X, Y, Z, N_CONTOURS, colors='k')
+					plt.clabel(CS, fontsize=9, inline=1)
+					CS2 = plt.contourf(X, Y, Z, 100, cmap="viridis")
+					cbar = plt.colorbar(CS2)
 
 					# plotting min track time
 					minval = Z.max()
@@ -228,7 +235,7 @@ class StudyRecord:
 					maxx = X1[xs[0]]
 					maxy = Y1[ys[0]]
 
-					plt.scatter(X, Y, marker="x", label="Details", picker=20)
+					plt.scatter(X, Y, marker=MARKER, label="Details", picker=20)
 					plt.scatter(maxx, maxy, marker="o", s=20, label="Max Points", zorder=10, picker=5)
 
 					# adding labels + legibility
@@ -263,8 +270,10 @@ class StudyRecord:
 					Z = np.transpose(self.lat_accels[seg_no])
 
 					# plotting shaded regions
-					CS = plt.contourf(X, Y, Z, 200, cmap="inferno")
-					cbar = plt.colorbar(CS)
+					CS = plt.contour(X, Y, Z, N_CONTOURS, colors='k')
+					plt.clabel(CS, fontsize=9, inline=1)
+					CS2 = plt.contourf(X, Y, Z, 100, cmap="inferno")
+					cbar = plt.colorbar(CS2)
 
 					# plotting min track time
 					minval = Z.max()
@@ -273,7 +282,7 @@ class StudyRecord:
 					maxx = X1[xs[0]]
 					maxy = Y1[ys[0]]
 
-					plt.scatter(X, Y, marker="x", label="Details", picker=20)
+					plt.scatter(X, Y, marker=MARKER, label="Details", picker=20)
 					plt.scatter(maxx, maxy, marker="o", s=20, label="Max Points", zorder=10, picker=5)
 
 					# adding labels + legibility
@@ -309,8 +318,10 @@ class StudyRecord:
 				Z = total_points
 
 				# plotting shaded regions
-				CS = plt.contourf(X, Y, Z, 200, cmap="viridis")
-				cbar = plt.colorbar(CS)
+				CS = plt.contour(X, Y, Z, N_CONTOURS, colors='k')
+				plt.clabel(CS, fontsize=9, inline=1)
+				CS2 = plt.contourf(X, Y, Z, 100, cmap="viridis")
+				cbar = plt.colorbar(CS2)
 
 				# plotting min track time
 				minval = Z.max()
@@ -319,7 +330,7 @@ class StudyRecord:
 				maxx = X1[xs[0]]
 				maxy = Y1[ys[0]]
 
-				plt.scatter(X, Y, marker="x", label="Details", picker=20)
+				plt.scatter(X, Y, marker=MARKER, label="Details", picker=20)
 				plt.scatter(maxx, maxy, marker="o", s=20, label="Max Points", zorder=10, picker=5)
 
 				# adding labels + legibility

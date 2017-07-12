@@ -1,0 +1,82 @@
+# Template / example for how to set up a study.
+
+vehicle: rgp007.yaml
+
+#### TRACK SETUP ####
+track:
+- acceleration.dxf
+- skidpad_loop.dxf
+# - ne_autocross_2015.dxf
+# - ne_endurance_2015.dxf
+- mi_autocross_2017.dxf
+- mi_endurance_2017.dxf
+segment_distance:
+- 0.2
+- 0.2
+- 0.5
+- 0.5
+- 0.5
+- 0.5
+steady_state:
+- false
+- false
+- false
+- false
+- false
+- false
+point_formulas:
+- acceleration
+- skidpad
+- autocross
+- endurance
+- autocross
+- endurance
+min_times:
+- 4.1
+- 4.8
+# - 57.51
+# - 85
+- 41.27
+- 75
+min_co2:
+- None
+- None
+# - None
+# - 0.3594
+- None
+- 0.2202
+
+model: pointmass
+
+tests:
+- target: downforce_35mph
+  operation: replace
+  test_vals:
+    range_start: 0
+    range_step: 7.5
+    range_end: 90
+# - target: mass
+#   operation: replace
+#   test_vals:
+#     range_start: 550
+#     range_step: 1.25
+#     range_end: 570
+tests2:
+- target: mass
+  operation: replace
+  test_vals:
+    range_start: 535
+    range_end: 595
+    range_step: 7.5
+
+# what outputs do you want? There is laptime, lateral acceleration (at end of track; included for correlation study), and competition points.
+plot_outputs:
+- time
+- points
+
+# plotting parameters
+plot_style: basic
+plot_title: Downforce/Drag Study (Michigan 17)
+plot_x_label: Downforce @35 mph (lbf)
+plot_y_label: Mass (lbm)
+#plot_points: Null # if you specify this it must be as big as there are test values.
