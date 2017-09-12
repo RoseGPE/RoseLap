@@ -363,9 +363,9 @@ class StudyRecord:
 
 		print("Done!")
 
-def run(filename):
+def run(filename, verbose=True):
 	timestamp_start = time.time()
-	print("Loading test...")
+	if verbose: print("Loading test...")
 
 	# load the study YAML into s_OBJ
 	study_YAML = './Studies/' + filename
@@ -377,18 +377,18 @@ def run(filename):
 	# load vehicle
 	vehicle.load(s_OBJ["vehicle"])
 
-	print("Setting up tests...")
+	if verbose: print("Setting up tests...")
 
 	if not 'model' in s_OBJ:
 		s_OBJ['model'] = 'twotires'
 	model = s_OBJ['model']
-	print(repr(model))
+	if verbose: print(repr(model))
 
 	if model == 'pointmass':
-		print('point mass model')
+		if verbose: print('point mass model')
 		sim_pkg = sim_pointmass
 	else:
-		print('two tire model')
+		if verbose: print('two tire model')
 		sim_pkg = sim_twotires
 
 	# set up track
@@ -431,10 +431,10 @@ def run(filename):
 		lat_accels = np.zeros((len(segList), num_xtests, num_ytests))
 
 		for seg_no in range(len(segList)):
-			print("\tTesting track " + str(seg_no + 1) + "...")
+			if verbose: print("\tTesting track " + str(seg_no + 1) + "...")
 
 			for test_no in range(num_xtests):
-				print("\t\tTesting parameter row " + str(test_no + 1) + "...")
+				if verbose: print("\t\tTesting parameter row " + str(test_no + 1) + "...")
 
 				# alter the test variables as need be
 				for var_no, var in enumerate(targets):
@@ -473,13 +473,13 @@ def run(filename):
 						co2s[seg_no, test_no, test2_no]  = output[-1][-1, O_CO2]
 						lat_accels[seg_no, test_no, test2_no] = output[-1][-2, O_LAT_ACC]
 
-						print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
+						if verbose: print("\t\t\tTest parameter " + str(test2_no + 1) + " complete!")
 
-		print("Done!")
+		if verbose: print("Done!")
 		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, co2s, lat_accels, segList, s_OBJ, "3D")
 
 	except KeyError as e: # run 2D test
-		print("Running tests...")
+		if verbose: print("Running tests...")
 
 		# set up some preliminary values
 		num_tests = len(test_points[0])
@@ -496,7 +496,7 @@ def run(filename):
 
 		# run 1D study
 		for seg_no in range(len(segList)):
-			print("\tTesting track " + str(seg_no + 1) + "...")
+			if verbose: print("\tTesting track " + str(seg_no + 1) + "...")
 
 			for test_no in range(num_tests):
 				# alter the variables as need be
@@ -522,7 +522,7 @@ def run(filename):
 				lat_accels[seg_no, test_no] = output[-1][-2, O_LAT_ACC]
 				
 
-				print("\t\tTest " + str(test_no + 1) + " complete!")
+				if verbose: print("\t\tTest " + str(test_no + 1) + " complete!")
 				# plot_velocity_and_events(output[test_no], "time")
 
 		return StudyRecord(filename, study_text, timestamp_start, time.time(), output, times, co2s, lat_accels, segList, s_OBJ)
