@@ -3,7 +3,6 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
-import sim
 from constants import *
 
 def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):

@@ -1,81 +1,82 @@
 # Template / example for how to set up a study.
 
-vehicle: example_vehicle.yaml
+vehicle: rgp007.yaml
 
 #### TRACK SETUP ####
-
-# List of tracks to load
 track:
 - acceleration.dxf
 - skidpad_loop.dxf
-- ne_autocross_2015.dxf
-- ne_endurance_2015.dxf
-# Segment size to use on each track (0.2 is a pretty good size)
+# - ne_autocross_2015.dxf
+# - ne_endurance_2015.dxf
+- mi_autocross_2017.dxf
+- mi_endurance_2017.dxf
 segment_distance:
 - 0.2
 - 0.2
-- 0.2
-- 0.2
-# Whether or not to use 'steady state' solving (slows down simulation)
+- 0.5
+- 0.5
+- 0.5
+- 0.5
 steady_state:
 - false
 - false
 - false
 - false
-# What type of event each track is (for point formulation)
+- false
+- false
 point_formulas:
 - acceleration
 - skidpad
 - autocross
-- endurance # you can use endurance_noeff to disable efficiency scoring
-# Top times on each track (just need a ballpark, really. Point formulas are non-linear technically but they're pretty close to it)
+- endurance
+- autocross
+- endurance
 min_times:
 - 4.1
 - 4.8
-- 57.51
-- 90.24
-# CO2 usage, for computing efficiency score in the endurance event. Don't need to give a value if you aren't using it.
+# - 57.51
+# - 85
+- 41.27
+- 75
 min_co2:
 - None
 - None
+# - None
+# - 0.3594
 - None
-- 0.3594
+- 0.2202
 
-# Tests. This is a 3D setup. To do a 2D setup, simply omit tests2.
+model: pointmass
+
 tests:
-- target: mass
-  operation: replace
-  test_vals: # test_vals is a list of values.
-    - 500
-    - 520
-    - 540
-    - 570
-    - 600
-    - 650
-tests2:
-# You can sweep over multiple values at once! This, for example, will test downforce/drag = 0/10, 10/15, 20/20, etc...
 - target: downforce_35mph
   operation: replace
-  test_vals: # you can also use the range syntax to generate a list from a range.
+  test_vals:
     range_start: 0
-    range_end: 80
-    range_step: 10
+    range_step: 30
+    range_end: 90
+# - target: mass
+#   operation: replace
+#   test_vals:
+#     range_start: 550
+#     range_step: 1.25
+#     range_end: 570
+tests2:
 - target: drag_35mph
   operation: replace
   test_vals:
-    range_start: 10
-    range_end: 50
-    range_step: 5
+    range_start: 0
+    range_end: 45
+    range_step: 15
 
 # what outputs do you want? There is laptime, lateral acceleration (at end of track; included for correlation study), and competition points.
 plot_outputs:
 - time
-- lateral_acceleration
 - points
 
 # plotting parameters
 plot_style: basic
-plot_title: Weight/Downforce Study (Lincoln)
-plot_x_label: Car Mass (Slugs)
-plot_y_label: Downforce @35 mph (lbf)
+plot_title: Downforce/Drag Study (Michigan 17)
+plot_x_label: Downforce @35 mph (lbf)
+plot_y_label: Drag @35 mph (lbf)
 #plot_points: Null # if you specify this it must be as big as there are test values.

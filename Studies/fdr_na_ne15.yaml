@@ -13,13 +13,13 @@ track:
 segment_distance:
 - 0.2
 - 0.2
-- 0.4
-- 0.4
-- 0.4
-- 0.4
+- 0.2
+- 0.2
+- 0.2
+- 0.2
 steady_state:
 - false
-- false
+- true
 - false
 - false
 - false
@@ -46,14 +46,14 @@ min_co2:
 - None
 - 0.2202
 
-model: twotires
+model: pointmass
 
 tests:
 - target: final_drive_reduction
   operation: replace
   test_vals:
     range_start: 2
-    range_step: 0.05
+    range_step: 0.03
     range_end: 3.5
 
 # what outputs do you want? There is laptime, lateral acceleration (at end of track; included for correlation study), and competition points.

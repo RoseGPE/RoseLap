@@ -297,11 +297,11 @@ def solve(vehicle, segments, output_0 = None):
       if shiftpt < 0 and gear != better_gear and output[i,O_STATUS]==S_ENG_LIM_ACC and output[i,O_VELOCITY]>shift_v_req:
         gear += int((better_gear-gear)/abs(better_gear-gear))
         shiftpt = i
-        shift_v_req = output[i,O_VELOCITY]*1.01
+        shift_v_req = output[i,O_VELOCITY]*1.05
       elif shiftpt < 0 and output[i,O_STATUS]==S_TOPPED_OUT and gear<len(vehicle.gears)-1:
         gear += 1
         shiftpt = i
-        shift_v_req = output[i,O_VELOCITY]*1.01
+        shift_v_req = output[i,O_VELOCITY]*1.05
 
       if shiftpt >= 0 and output[i,O_TIME] > output[shiftpt,O_TIME]+vehicle.shift_time:
         shiftpt = -1

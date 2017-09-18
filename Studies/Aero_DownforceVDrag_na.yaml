@@ -1,60 +1,73 @@
 # Template / example for how to set up a study.
 
-vehicle: rgp007-turbo.yaml
+vehicle: rgp007.yaml
 
 #### TRACK SETUP ####
 track:
-- acceleration.dxf
 - skidpad_loop.dxf
-# - ne_autocross_2015.dxf
-# - ne_endurance_2015.dxf
+- acceleration.dxf
+- ne_autocross_2015.dxf
+- ne_endurance_2015.dxf
 - mi_autocross_2017.dxf
 - mi_endurance_2017.dxf
 segment_distance:
-- 0.2
-- 0.2
+- 0.1
+- 0.1
 - 0.2
 - 0.2
 - 0.2
 - 0.2
 steady_state:
 - false
-- true
+- false
 - false
 - false
 - false
 - false
 point_formulas:
-- acceleration
-- skidpad
+- skidpad_double
+- acceleration_double
 - autocross
 - endurance
 - autocross
 - endurance
 min_times:
-- 4.1
 - 4.8
-# - 57.51
-# - 85
+- 4.1
+- 57.51
+- 85
 - 41.27
 - 75
 min_co2:
 - None
 - None
-# - None
-# - 0.3594
+- None
+- 0.3594
 - None
 - 0.2202
 
 model: pointmass
 
 tests:
-- target: final_drive_reduction
+- target: downforce_35mph
   operation: replace
   test_vals:
-    range_start: 2
-    range_step: 0.03
-    range_end: 3.5
+    range_start: 0
+    range_step: 7.5
+    range_end: 97.5
+# - target: mass
+#   operation: replace
+#   test_vals:
+#     range_start: 550
+#     range_step: 1.25
+#     range_end: 570
+tests2:
+- target: drag_35mph
+  operation: replace
+  test_vals:
+    range_start: 0
+    range_end: 67.5
+    range_step: 7.5
 
 # what outputs do you want? There is laptime, lateral acceleration (at end of track; included for correlation study), and competition points.
 plot_outputs:
@@ -63,7 +76,7 @@ plot_outputs:
 
 # plotting parameters
 plot_style: basic
-plot_title: Final Drive Ratio Study (Michigan 17, Turbo)
-plot_x_label: Final Drive Ratio
-plot_y_label: Replace Me
+plot_title: Downforce/Drag Study (NA)
+plot_x_label: Downforce @35 mph (lbf)
+plot_y_label: Drag @35 mph (lbf)
 #plot_points: Null # if you specify this it must be as big as there are test values.

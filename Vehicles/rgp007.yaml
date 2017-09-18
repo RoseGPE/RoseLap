@@ -28,22 +28,8 @@ weight_bias: 0.55
 wheelbase_length: 5.1666667
 
 # VARIABLE: Naturally aspirated engine curve
-engine_rpms:
-  - 3500
-  - 4500
-  - 5500
-  - 6500
-  - 7500
-  - 8500
-  - 9500
-engine_torque: 
-  - 24.3
-  - 26.2
-  - 27.4
-  - 26.5
-  - 25.5
-  - 23.8
-  - 23.9
+engine_rpms: [1500, 2500, 3500, 4500, 5500, 6500, 7500, 8500, 9500]
+engine_torque: [30.9,33.7,33.8,33.2,32.5,30.2,30.1,31.1,28.9]
 
 # CORRECT: Stock YFZ 
 engine_reduction: 2.81
@@ -57,7 +43,7 @@ gears:
 shift_time: 0.2
 
 # VARIABLE: 36:13
-final_drive_reduction: 2.7692
+final_drive_reduction: 2.4
 
 co2_factor: 2.31 #kg/L
 e_factor: 2271700 #ft*lbf/L

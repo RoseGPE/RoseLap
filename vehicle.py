@@ -41,15 +41,18 @@ class Vehicle(object):
       return (0,crank_rpm) # simulate hitting the rev limiter
     else:
       for i in range(1, len(v.engine_rpms)):
-        if crank_rpm < v.engine_rpms[i]:
+        if crank_rpm <= v.engine_rpms[i]:
           torque = v.engine_torque[i] + (crank_rpm - v.engine_rpms[i]) * (v.engine_torque[i-1] - v.engine_torque[i]) / (v.engine_rpms[i-1] - v.engine_rpms[i])
           return (torque * v.engine_reduction * gear_ratio * v.final_drive_reduction / v.tire_radius, crank_rpm)
 
+    print(vel, gear, crank_rpm)
+    return None
+
   def best_gear(self, v, fr_limit):
-    opts = [self.eng_force(v, int(gear))[0] for gear in range(len(self.gears))]
+    opts = [min(self.eng_force(v, int(gear))[0], fr_limit) for gear in range(len(self.gears))]
     best = 0
     besti = -1
-    for i in range(len(opts)):
+    for i in reversed(range(len(opts))):
       if opts[i] >= best:
         best = opts[i]
         besti = i

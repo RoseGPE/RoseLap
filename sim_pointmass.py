@@ -97,20 +97,25 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
   return output
 
-def solve(vehicle, segments, output_0 = None):
+def solve(vehicle, segments, v0 = None):
   # set up initial stuctures
   output = np.zeros((len(segments), O_MATRIX_COLS))
   precrash_output = np.zeros((len(segments), O_MATRIX_COLS))
   shifting = NOT_SHIFTING
-  
-  if output_0 is None:
-    output[0,O_NF] = vehicle.mass*vehicle.g
-    gear = vehicle.best_gear(output[0,O_VELOCITY], np.inf)
+
+  if v0 is None:
+    output[0,O_VELOCITY] = 0
   else:
-    output[0,:] = output_0
-    output[0,O_TIME] = 0
-    output[0,O_DISTANCE] = 0
-    gear = vehicle.best_gear(output_0[O_VELOCITY], output_0[O_FR_REMAINING])
+    output[0,O_VELOCITY] = v0
+  
+  # if output_0 is None:
+  output[0,O_NF] = vehicle.mass*vehicle.g
+  gear = vehicle.best_gear(output[0,O_VELOCITY], np.inf)
+  # else:
+  #   output[0,:] = output_0
+  #   output[0,O_TIME] = 0
+  #   output[0,O_DISTANCE] = 0
+  #   gear = vehicle.best_gear(output_0[O_VELOCITY], output_0[O_FR_REMAINING])
 
   brake = False
   shiftpt = -1
@@ -163,6 +168,9 @@ def solve(vehicle, segments, output_0 = None):
         # Try again from an earlier point
         
         lower_brake_bound-=backup_amount
+        if lower_brake_bound < 0:
+          print('shit. shit shit shit shit fffffffffffffffff')
+          lower_brake_bound = 0
         #print('push further', lower_brake_bound)
 
         i = lower_brake_bound
@@ -213,11 +221,11 @@ def solve(vehicle, segments, output_0 = None):
       if shiftpt < 0 and gear != better_gear and output[i,O_STATUS]==S_ENG_LIM_ACC and output[i,O_VELOCITY]>shift_v_req:
         gear += int((better_gear-gear)/abs(better_gear-gear))
         shiftpt = i
-        shift_v_req = output[i,O_VELOCITY]*1.01
+        shift_v_req = output[i,O_VELOCITY]*1.05
       elif shiftpt < 0 and output[i,O_STATUS]==S_TOPPED_OUT and gear<len(vehicle.gears)-1:
         gear += 1
         shiftpt = i
-        shift_v_req = output[i,O_VELOCITY]*1.01
+        shift_v_req = output[i,O_VELOCITY]*1.05
 
       if shiftpt >= 0 and output[i,O_TIME] > output[shiftpt,O_TIME]+vehicle.shift_time:
         shiftpt = -1
@@ -232,7 +240,7 @@ def solve(vehicle, segments, output_0 = None):
 
 def steady_solve(vehicle,segments):
   output = solve(vehicle,segments)
-  return solve(vehicle,segments,output[-1, :])
+  return solve(vehicle,segments,output[-1, O_VELOCITY])
 
 def colorgen(num_colors, idx):
   color_norm  = colors.Normalize(vmin=0, vmax=num_colors-1)
