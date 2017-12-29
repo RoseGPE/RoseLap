@@ -9,10 +9,3 @@ RoseLap will soon be acessible via a web interface, which includes various plott
 ### Configuration
 ### Batching
 ### Packaging
-
-TODO:
-Setup script
-File format
-Find format that works across all versions
-CLI
-Elegant Error Handling
