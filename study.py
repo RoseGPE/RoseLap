@@ -371,7 +371,6 @@ def run(filename):
 	study_YAML = './Studies/' + filename
 	with open(study_YAML) as data:
 	  s_OBJ = yaml.load(data)
-	with open(study_YAML) as data:
 	  study_text = data.read()
 
 	# load vehicle

@@ -67,10 +67,9 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     status = S_TOPPED_OUT
 
   vavg = ((v0+vf)/2)
-  try:
-    tf = t0 + segment.length/vavg
-  except:
-    tf = t0
+  
+  tf = t0 + (segment.length/vavg if vavg != 0 else 0)
+  
   xf = x0 + segment.length
 
   if not (brake or shifting):

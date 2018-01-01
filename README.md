@@ -16,7 +16,7 @@ RoseLap is a laptime simulation package that includes the following:
 
 Download the release .zip and move it to a working directory.
 
-RoseLap is built for Python 2.7. You will need that installed along with the following packages (at command line, run `pip install <package-name>`):
+RoseLap is built for Python 2.7. You will need that installed along with the following packages (at command line, run `pip install <package-name>` or 'python -m pip install <package-name>'):
 - numpy
 - ruamel.yaml
 - docopt
