@@ -20,9 +20,9 @@ def run(filename):
 	model = mcstudy['model']
 
 	if model == 'twotires':
-		sim_pkg = sim_pointmass
+		sim_pkg = sim_twotires 
 	else:
-		sim_pkg = sim_twotires
+		sim_pkg = sim_pointmass
 
 	fig, ax = plt.subplots()
 	fig.canvas.set_window_title('Mesh Convergence Results')
