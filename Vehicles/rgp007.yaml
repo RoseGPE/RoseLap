@@ -45,5 +45,5 @@ shift_time: 0.2
 # VARIABLE: 36:13
 final_drive_reduction: 2.4
 
-co2_factor: 2.31 #kg/L
-e_factor: 2271700 #ft*lbf/L
+co2_factor: 2.31 # kg/L
+e_factor: 2271700 # ft*lbf/L

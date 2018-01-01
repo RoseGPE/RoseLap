@@ -66,16 +66,11 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     Ff_long = 0
 
 
-  a_long = (Fr_long+Ff_long-Fdrag)/vehicle.mass
+  F_longitudinal = Ff_long + Fr_long - Fdrag
+  a_long = (F_longitudinal)/vehicle.mass
 
-  F_longitudinal = Ff_long+Fr_long - Fdrag
-  a = F_longitudinal / vehicle.mass
-
-  try:
-    vf = math.sqrt(v0**2 + 2*a_long*segment.length)
-  except:
-    a_long=0
-    vf=0
+  RSS = v0**2 + 2*a_long*segment.length
+  vf = (math.sqrt(RSS) if RSS > 0 else 0)
 
   if abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
     status = S_DRAG_LIM
@@ -150,10 +145,10 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
 
 
 
-  try:
-    tf = t0 + segment.length/((v0+vf)/2)
-  except:
-    tf = t0
+  vavg = ((v0+vf)/2)
+  
+  tf = t0 + (segment.length/vavg if vavg > 0 else 0)
+  
   xf = x0 + segment.length
 
   if not (brake or shifting):

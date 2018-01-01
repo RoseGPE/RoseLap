@@ -158,10 +158,9 @@ class Segment(object):
     else:
       p = (self.length_m+self.length_p+self.length_secant)/2
       #print(p, self.length_m, self.length_p, self.length_secant)
-      try:
-        area = math.sqrt(p*(p-self.length_m)*(p-self.length_p)*(p-self.length_secant))
-      except ValueError:
-        area=0
+      
+      rileywaite = p*(p-self.length_m)*(p-self.length_p)*(p-self.length_secant)
+      area = (math.sqrt(rileywaite) if rileywaite > 0 else 0)
 
       self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
     
