@@ -55,6 +55,13 @@ def step(vehicle, prior_result, segment, segment_next, brake, shifting, gear):
   F_longitudinal = Ftire_long - Fdrag
   a_long = F_longitudinal / vehicle.mass
 
+  # We should try and move away from using try/catch for math ops.
+  # I (Riley) won't change this right now since there may be more to it, but this would be better as:
+  #
+  #     temp = v0**2 + 2*a_long*segment.length
+  #     vf = (math.sqrt(temp) if temp >=0 else 0)
+  #
+  
   try:
     vf = math.sqrt(v0**2 + 2*a_long*segment.length)
   except:
